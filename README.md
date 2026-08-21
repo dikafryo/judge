@@ -32,7 +32,7 @@
 
 ```bash
 # 1) 소스 받기
-git clone <이 저장소 URL> judge
+git clone https://github.com/dikafryo/judge judge
 cd judge
 
 # 2) PHP 의존성 설치 (배포 서버에서는 --no-dev 권장)
