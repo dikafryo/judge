@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
-    protected $fillable = ['name', 'description', 'event_date', 'admin_password', 'is_open', 'scoring_method', 'pass_count', 'is_blind', 'report_signers', 'show_judge_signs'];
+    protected $fillable = ['name', 'description', 'event_date', 'admin_password', 'is_open', 'is_demo', 'scoring_method', 'pass_count', 'is_blind', 'report_signers', 'show_judge_signs'];
 
     /** 집계 방식 안내문 (대시보드·최종집계표 ※ 표기용) */
     public function scoringMethodNote(): string
@@ -24,6 +24,7 @@ class Event extends Model
         return [
             'event_date'     => 'date',
             'is_open'        => 'boolean',
+            'is_demo'        => 'boolean',
             'is_blind'       => 'boolean',
             'report_signers'   => 'array',
             'show_judge_signs' => 'boolean',

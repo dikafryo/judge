@@ -63,7 +63,7 @@
                     <section>
                         <h4 class="font-bold text-slate-800 text-base mb-2">전체 흐름</h4>
                         <ol class="space-y-1.5">
-                            <li class="flex gap-3"><span class="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold">1</span><span><strong>행사 만들기</strong> — 홈 아래 "행사 만들기 · 관리"</span></li>
+                            <li class="flex gap-3"><span class="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold">1</span><span><strong>행사 만들기</strong> — 홈 아래 "여기를 눌러"</span></li>
                             <li class="flex gap-3"><span class="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold">2</span><span><strong>평가 항목</strong> — 배점 합계 100점</span></li>
                             <li class="flex gap-3"><span class="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold">3</span><span><strong>대상·심사위원 등록</strong> — 코드 자동 발급</span></li>
                             <li class="flex gap-3"><span class="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold">4</span><span><strong>코드 배부</strong> — QR 카드 인쇄</span></li>
@@ -83,7 +83,7 @@
                     <section>
                         <h4 class="font-bold text-slate-800 text-base mb-2">1. 행사 만들기</h4>
                         <ul class="list-disc list-inside space-y-1">
-                            <li>홈 → "행사 만들기 · 관리" → <strong>[＋ 새 행사 만들기]</strong>. 행사명과 비밀번호(4자 이상)만 있으면 됩니다.</li>
+                            <li>홈 → "여기를 눌러" → <strong>[＋ 새 행사 만들기]</strong>. 행사명과 비밀번호(4자 이상)만 있으면 됩니다.</li>
                             <li class="text-amber-700"><strong>자동 삭제</strong>: 행사일 기준 30일 후 삭제. <strong>마감한 행사는 2년 보관</strong> — 보관하려면 꼭 마감하세요.</li>
                         </ul>
                     </section>
@@ -96,20 +96,28 @@
                             <li><strong>최종집계표 서명</strong>: 심사위원 서명란 포함(기본) 또는 생략하고 결재란만 — 생략 시 <strong>기록자 필수</strong>.</li>
                             <li><strong>결재란</strong>: 기록자·검토자·확인자의 부서·직급·이름 입력 → 출력물 하단에 표시. 이름 비운 역할은 빠집니다.</li>
                             <li><strong>선정자 수</strong>: 지정하면 상위 N곳에 <span class="text-emerald-600 font-semibold">선정</span> 표시.</li>
-                            <li><strong>평가 항목</strong>: 배점 합계 <strong>100점 필수</strong>. 세부 항목을 두면 세부 합계 = 상위 배점.</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h4 class="font-bold text-slate-800 text-base mb-2">3. 평가 대상</h4>
+                        <h4 class="font-bold text-slate-800 text-base mb-2">3. 평가항목</h4>
                         <ul class="list-disc list-inside space-y-1">
-                            <li>한 줄에 하나씩 붙여넣어 일괄 등록. 등록순으로 <strong>심사번호(01, 02…)</strong> 자동 부여.</li>
+                            <li>배점 합계 <strong>100점 필수</strong> — 100점이 될 때까지 탭에 필수 표시가 남습니다.</li>
+                            <li>세부(2레벨) 항목을 두면 2레벨에서 채점하며, 세부 합계 = 상위 배점이어야 합니다.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h4 class="font-bold text-slate-800 text-base mb-2">4. 평가 대상</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>한 줄에 하나씩 <strong>이름, 소속</strong> 형식으로 입력합니다. (예: <code>김철수, OO대학교</code>) 소속이 없으면 이름만 적으면 됩니다.</li>
+                            <li>여러 줄을 한꺼번에 붙여넣어 일괄 등록. 등록순으로 <strong>심사번호(01, 02…)</strong> 자동 부여.</li>
                             <li>심사 시작 후 삭제하면 뒤 번호가 당겨지니 시작 전에 확정하세요.</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h4 class="font-bold text-slate-800 text-base mb-2">4. 심사위원</h4>
+                        <h4 class="font-bold text-slate-800 text-base mb-2">5. 심사위원</h4>
                         <ul class="list-disc list-inside space-y-1">
                             <li>이름만 등록하면 <strong>6자리 코드</strong>가 자동 발급됩니다.</li>
                             <li><strong>[접속안내 출력]</strong> → QR 카드 인쇄 배부. 링크 복사로 문자·메신저 전달도 가능.</li>
@@ -117,7 +125,7 @@
                     </section>
 
                     <section>
-                        <h4 class="font-bold text-slate-800 text-base mb-2">5. 심사 당일</h4>
+                        <h4 class="font-bold text-slate-800 text-base mb-2">6. 심사 당일</h4>
                         <ul class="list-disc list-inside space-y-1">
                             <li>"집계" 탭이 <strong>5초마다 자동 갱신</strong> — 진행률·총점·평균·순위 실시간 확인.</li>
                             <li>동점 경고(⚠️)가 뜨면 점수를 조정해 동점을 해소하세요.</li>
@@ -126,7 +134,7 @@
                     </section>
 
                     <section>
-                        <h4 class="font-bold text-slate-800 text-base mb-2">6. 마감과 결과</h4>
+                        <h4 class="font-bold text-slate-800 text-base mb-2">7. 마감과 결과</h4>
                         <ul class="list-disc list-inside space-y-1">
                             <li><strong>[심사 마감하기]</strong> → 접속 코드 회수, 수정 잠김(조회·출력은 가능).</li>
                             <li><strong>[⬇️ CSV]</strong> 엑셀에서 바로 열림 · <strong>[🖨️ 최종결과 출력]</strong> A4 최종집계표.</li>
@@ -135,7 +143,7 @@
                     </section>
 
                     <section>
-                        <h4 class="font-bold text-slate-800 text-base mb-2">7. 행사 삭제</h4>
+                        <h4 class="font-bold text-slate-800 text-base mb-2">8. 행사 삭제</h4>
                         <p>기본설정 맨 아래에서 행사명을 그대로 재입력하면 삭제.
                         <span class="text-rose-600 font-semibold">모든 데이터가 지워지고 되돌릴 수 없습니다</span> — 출력·CSV 저장을 먼저 하세요.</p>
                     </section>

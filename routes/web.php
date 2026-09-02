@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\SetupController;
+use App\Http\Controllers\DemoController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\JudgeController;
 use Illuminate\Support\Facades\Route;
@@ -18,12 +19,20 @@ Route::post('/events', [EventController::class, 'store'])->name('events.store');
 
 /*
 |--------------------------------------------------------------------------
+| 체험(데모) — 로그인 없이 샘플 행사를 둘러보는 공개 페이지
+|--------------------------------------------------------------------------
+*/
+Route::get('/demo', [DemoController::class, 'index'])->name('demo');
+Route::get('/demo/admin', [DemoController::class, 'admin'])->name('demo.admin');
+
+/*
+|--------------------------------------------------------------------------
 | 심사위원 — 접속 코드 기반, 로그인 없음
 |--------------------------------------------------------------------------
 */
 Route::post('/judge/enter', [JudgeController::class, 'enter'])->name('judge.enter');
 
-Route::prefix('judge/{judge:code}')->group(function () {
+Route::prefix('judge/{judge:code}')->middleware('demo.readonly')->group(function () {
     Route::get('/', [JudgeController::class, 'show'])->name('judge.show');
     Route::post('/scores', [JudgeController::class, 'storeScores'])->name('judge.scores');       // AJAX
     Route::post('/signature', [JudgeController::class, 'storeSignature'])->name('judge.signature'); // AJAX
@@ -40,9 +49,12 @@ Route::prefix('admin/{event}')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->name('admin.login.post');
     Route::post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
-    Route::middleware('event.admin')->group(function () {
-        // 기본설정 (집계 방식 / 평가 항목 / 행사 삭제)
+    Route::middleware(['event.admin', 'demo.readonly'])->group(function () {
+        // 기본설정 (집계 방식 / 최종집계표 서명 / 행사 삭제)
         Route::get('/setup', [SetupController::class, 'index'])->name('admin.setup');
+
+        // 평가 항목 관리 페이지
+        Route::get('/criteria', [SetupController::class, 'criteria'])->name('admin.criteria');
 
         // 평가 대상 / 심사위원 관리 페이지
         Route::get('/candidates', [SetupController::class, 'candidates'])->name('admin.candidates');

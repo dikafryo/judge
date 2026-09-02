@@ -26,7 +26,7 @@
         .judge-line strong { font-size: 15px; }
         .sig-line {
             position: relative;
-            display: inline-block; width: 150px; height: 34px;
+            display: inline-block; width: 200px; height: 52px;
             border-bottom: 1px solid #555;
             vertical-align: bottom; text-align: center;
             margin-left: 10px;
@@ -36,7 +36,11 @@
             position: absolute; left: 0; right: 0; bottom: 4px;
             color: #ccc; font-size: 10px;
         }
-        .sig-line img { position: relative; z-index: 1; max-height: 32px; max-width: 146px; }
+        /* 자필 서명은 (서명) 라벨 위에 겹쳐 놓는다 */
+        .sig-line img {
+            position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%);
+            z-index: 1; max-height: 50px; max-width: 196px;
+        }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
         th, td { border: 1px solid #333; padding: 7px 6px; text-align: center; }

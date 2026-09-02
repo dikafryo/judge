@@ -40,14 +40,18 @@
         .sign-item .name { font-weight: bold; font-size: 14px; }
         .sign-line {
             position: relative; display: inline-block;
-            flex: none; width: 110px; height: 32px;
+            flex: none; width: 160px; height: 50px;
             border-bottom: 1px solid #555; text-align: center;
         }
         .sign-line .sig-label {
             position: absolute; left: 0; right: 0; bottom: 3px;
             color: #ccc; font-size: 10px;
         }
-        .sign-line img { position: relative; z-index: 1; max-height: 30px; max-width: 96%; }
+        /* 자필 서명은 (서명) 라벨 위에 겹쳐 놓는다 */
+        .sign-line img {
+            position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%);
+            z-index: 1; max-height: 48px; max-width: 96%;
+        }
 
         /* 하단 결재란 — 기록자/검토자/확인자, 우측 정렬 + 열 세로 정렬 */
         .approve-section { margin-top: 30px; page-break-inside: avoid; text-align: right; }

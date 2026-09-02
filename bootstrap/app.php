@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'event.admin' => \App\Http\Middleware\EnsureEventAdmin::class,
             'event.open'  => \App\Http\Middleware\EnsureEventOpen::class,
+            'demo.readonly' => \App\Http\Middleware\BlockDemoWrites::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

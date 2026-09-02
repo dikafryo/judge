@@ -60,11 +60,11 @@
             <form method="POST" action="{{ route('admin.candidates.store', $event) }}" class="space-y-2">
                 @csrf
                 <textarea name="bulk" rows="8" required
-                          placeholder="한 줄에 하나씩 입력&#10;이름 | 소속(선택)&#10;예)&#10;주식회사 미래테크 | 부산&#10;김철수 | OO대학교"
+                          placeholder="한 줄에 하나씩 입력&#10;이름, 소속(선택)&#10;예)&#10;주식회사 미래테크, 부산&#10;김철수, OO대학교"
                           class="w-full rounded-lg border-slate-300 border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                 <button class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 transition">대상 일괄 등록</button>
             </form>
-            <p class="mt-2 text-xs text-slate-400">한 건만 입력해 추가할 수도, 여러 줄을 붙여넣어 일괄 등록할 수도 있습니다. 소속은 <code>|</code> 뒤에 적으세요.</p>
+            <p class="mt-2 text-xs text-slate-400">한 건만 입력해 추가할 수도, 여러 줄을 붙여넣어 일괄 등록할 수도 있습니다. 소속은 쉼표(<code>,</code>) 뒤에 적으세요. 소속이 없으면 이름만 적으면 됩니다.</p>
         @endunless
     </section>
 </div>
