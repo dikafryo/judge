@@ -15,7 +15,8 @@ class PruneEvents extends Command
     {
         $now = now()->startOfDay();
 
-        $targets = Event::all()->filter(function (Event $event) use ($now) {
+        // 체험용 샘플 행사(is_demo)는 상시 공개용이므로 보관 기한을 적용하지 않는다
+        $targets = Event::where('is_demo', false)->get()->filter(function (Event $event) use ($now) {
             $basis     = $event->event_date ?? $event->created_at;
             $keepUntil = $event->is_open ? $basis->copy()->addDays(30) : $basis->copy()->addYears(2);
 

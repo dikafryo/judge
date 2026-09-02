@@ -13,16 +13,24 @@ use Illuminate\View\View;
 
 class SetupController extends Controller
 {
-    /** 기본설정 화면 — 집계 방식 / 평가 항목 / 행사 삭제 */
+    /** 기본설정 화면 — 집계 방식 / 최종집계표 서명 / 행사 삭제 */
     public function index(Event $event): View
     {
-        $event->load(['criteria', 'judges']);
+        $event->load('judges');
+
+        return view('admin.setup', compact('event'));
+    }
+
+    /** 평가 항목 관리 화면 — 1·2레벨 항목 구성, 배점 합계 100점 필수 */
+    public function criteria(Event $event): View
+    {
+        $event->load('criteria');
 
         $byParent    = $event->criteria->groupBy('parent_id');
         $topCriteria = $event->criteria->whereNull('parent_id')->values();
         $totalMax    = (int) $topCriteria->sum('max_score');
 
-        return view('admin.setup', compact('event', 'totalMax', 'topCriteria', 'byParent'));
+        return view('admin.criteria', compact('event', 'totalMax', 'topCriteria', 'byParent'));
     }
 
     /** 평가 대상 관리 화면 */
@@ -41,7 +49,7 @@ class SetupController extends Controller
         return view('admin.judges', compact('event'));
     }
 
-    /** 평가 대상 일괄 등록 — 한 줄에 하나, "이름 | 소속" 형식 지원 */
+    /** 평가 대상 일괄 등록 — 한 줄에 하나, "이름, 소속" 형식. 쉼표 외에 파이프(|)·탭 구분자도 받는다. */
     public function storeCandidates(Request $request, Event $event): RedirectResponse
     {
         $request->validate(['bulk' => ['required', 'string', 'max:10000']], [], ['bulk' => '평가 대상']);
@@ -55,7 +63,7 @@ class SetupController extends Controller
                 continue;
             }
 
-            [$name, $affiliation] = array_pad(array_map('trim', explode('|', $line, 2)), 2, null);
+            [$name, $affiliation] = array_pad(array_map('trim', preg_split('/[,|\t]/', $line, 2)), 2, null);
 
             $event->candidates()->create([
                 'name'        => mb_substr($name, 0, 100),

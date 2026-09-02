@@ -2,6 +2,17 @@
 
 @section('title', '홈')
 
+@section('header-right')
+    <a href="{{ route('demo') }}"
+       class="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-100 transition mr-2">
+        체험해 보기
+    </a>
+    <a href="{{ route('events.index') }}"
+       class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-indigo-600 hover:border-indigo-400 transition">
+        행사관리
+    </a>
+@endsection
+
 @section('content')
 <div class="text-center mb-10">
     <h1 class="text-3xl font-bold text-slate-900">온라인 심사 시스템</h1>
@@ -28,9 +39,16 @@
     </form>
 </section>
 
+{{-- 처음 오신 분 — 샘플 행사 둘러보기 --}}
+<p class="mt-6 text-center text-sm text-slate-500">
+    처음이신가요?
+    <a href="{{ route('demo') }}" class="font-semibold text-amber-700 underline underline-offset-4 hover:text-amber-800">샘플 행사로 시스템을 먼저 둘러보세요</a>
+    — 로그인 없이 심사위원·관리자 화면을 모두 볼 수 있습니다.
+</p>
+
 {{-- 행사 담당자용 진입 링크 --}}
 <p class="mt-8 text-center text-sm text-slate-400">
-    행사 담당자이신가요?
-    <a href="{{ route('events.index') }}" class="text-slate-500 hover:text-indigo-600 underline underline-offset-4 font-medium">행사 만들기 · 관리</a>
+    새로운 심사를 만들거나, 기존 행사 관리를 하시려면
+    <a href="{{ route('events.index') }}" class="text-slate-500 hover:text-indigo-600 underline underline-offset-4 font-medium">여기를 눌러</a> 주세요.
 </p>
 @endsection

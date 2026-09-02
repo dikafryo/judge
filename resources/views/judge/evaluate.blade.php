@@ -9,6 +9,8 @@
 @section('content')
 <div x-data="judgeApp()" x-cloak>
 
+    @include('partials.demo-banner')
+
     {{-- 상단 바 --}}
     <div class="flex items-start justify-between flex-wrap gap-4 mb-6">
         <div>

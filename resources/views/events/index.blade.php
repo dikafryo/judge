@@ -3,6 +3,7 @@
 @section('title', '행사 관리')
 
 @section('header-right')
+    <a href="{{ route('demo') }}" class="mr-3 text-amber-700 hover:underline font-medium">체험해 보기</a>
     <a href="{{ route('home') }}" class="text-indigo-600 hover:underline font-medium">← 홈으로</a>
 @endsection
 
