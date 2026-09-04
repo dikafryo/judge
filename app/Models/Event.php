@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['name', 'description', 'event_date', 'admin_password', 'is_open', 'is_demo', 'scoring_method', 'pass_count', 'is_blind', 'report_signers', 'show_judge_signs'];
 
     /** 집계 방식 안내문 (대시보드·최종집계표 ※ 표기용) */

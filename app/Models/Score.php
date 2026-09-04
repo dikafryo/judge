@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Score extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['judge_id', 'candidate_id', 'criterion_id', 'score'];
 
     protected function casts(): array
