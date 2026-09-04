@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Criterion extends Model
 {
+    use HasFactory;
+
     protected $table = 'criteria';
 
     protected $fillable = ['event_id', 'parent_id', 'name', 'description', 'max_score', 'sort_order'];
