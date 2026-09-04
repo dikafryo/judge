@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\SetupRejected;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Controller;
+use App\Models\Candidate;
+use App\Models\Criterion;
 use App\Models\Event;
+use App\Models\Judge;
+use App\Services\EventSetup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -19,6 +24,10 @@ use Illuminate\Support\Facades\URL;
  */
 class AdminApiController extends Controller
 {
+    public function __construct(private readonly EventSetup $setup)
+    {
+    }
+
     private function event(Request $request): Event
     {
         /** @var Event $event */
@@ -44,6 +53,131 @@ class AdminApiController extends Controller
             'pass_count'       => $event->pass_count,
             'show_judge_signs' => $event->show_judge_signs,
         ]);
+    }
+
+    /**
+     * 설정 화면이 필요로 하는 전부를 한 번에 준다.
+     * 항목·대상·심사위원을 따로 부르면 왕복이 세 번이 되는데, 심사장 회선에서는 그 차이가 크다.
+     */
+    public function setup(Request $request): JsonResponse
+    {
+        $event = $this->event($request);
+
+        return response()->json([
+            'criteria'   => $event->criteria()->get()
+                ->map(fn (Criterion $c) => [
+                    'id'          => $c->id,
+                    'name'        => $c->name,
+                    'description' => $c->description,
+                    'max_score'   => (int) $c->max_score,
+                    'parent_id'   => $c->parent_id,
+                    'has_scores'  => $c->scores()->exists(),
+                ])->values(),
+            'candidates' => $event->candidates()->get()
+                ->map(fn (Candidate $c) => [
+                    'id'          => $c->id,
+                    'name'        => $c->name,
+                    'affiliation' => $c->affiliation,
+                ])->values(),
+            'judges'     => $event->judges()->get()
+                ->map(fn (Judge $j) => [
+                    'id'        => $j->id,
+                    'name'      => $j->name,
+                    'code'      => $j->code,
+                    'signed_at' => $j->signed_at?->toIso8601String(),
+                    // 앱이 심사위원 카드를 화면에 띄워 바로 보여줄 수 있게 한다(인쇄 없이 배포).
+                    'entry_url' => $j->code ? route('judge.show', $j) : null,
+                ])->values(),
+            'total_max'  => (int) $event->topCriteria()->sum('max_score'),
+        ]);
+    }
+
+    /** 집계 방식 · 블라인드 · 선정자 수 */
+    public function updateScoringMethod(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'scoring_method' => ['required', 'in:all,trimmed'],
+            'is_blind'       => ['required', 'boolean'],
+            'pass_count'     => ['nullable', 'integer', 'min:1', 'max:1000'],
+        ]);
+
+        $this->setup->updateScoringMethod($this->event($request), $data);
+
+        return $this->show($request);
+    }
+
+    /** 심사 진행/마감. 마감하면 접속 코드와 발급된 앱 토큰이 함께 회수된다. */
+    public function toggleOpen(Request $request): JsonResponse
+    {
+        $event = $this->event($request);
+
+        return response()->json([
+            'message' => $this->setup->toggleOpen($event),
+            'is_open' => $event->is_open,
+        ]);
+    }
+
+    public function storeCriterion(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name'        => ['required', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'max_score'   => ['required', 'integer', 'min:1', 'max:100'],
+            'parent_id'   => ['nullable', 'integer'],
+        ]);
+
+        try {
+            $this->setup->addCriterion($this->event($request), $data);
+        } catch (SetupRejected $e) {
+            return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+        }
+
+        return $this->setup($request);
+    }
+
+    public function destroyCriterion(Request $request, Criterion $criterion): JsonResponse
+    {
+        abort_unless($criterion->event_id === $this->event($request)->id, 404);
+
+        $criterion->delete();
+
+        return $this->setup($request);
+    }
+
+    public function storeCandidates(Request $request): JsonResponse
+    {
+        $data = $request->validate(['bulk' => ['required', 'string', 'max:10000']]);
+
+        $this->setup->importCandidates($this->event($request), $data['bulk']);
+
+        return $this->setup($request);
+    }
+
+    public function destroyCandidate(Request $request, Candidate $candidate): JsonResponse
+    {
+        abort_unless($candidate->event_id === $this->event($request)->id, 404);
+
+        $candidate->delete();
+
+        return $this->setup($request);
+    }
+
+    public function storeJudges(Request $request): JsonResponse
+    {
+        $data = $request->validate(['bulk' => ['required', 'string', 'max:5000']]);
+
+        $this->setup->importJudges($this->event($request), $data['bulk']);
+
+        return $this->setup($request);
+    }
+
+    public function destroyJudge(Request $request, Judge $judge): JsonResponse
+    {
+        abort_unless($judge->event_id === $this->event($request)->id, 404);
+
+        $judge->delete();
+
+        return $this->setup($request);
     }
 
     public function dashboard(Request $request, DashboardController $dashboard): JsonResponse

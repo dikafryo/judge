@@ -27,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'event.open'  => \App\Http\Middleware\EnsureEventOpen::class,
             'demo.readonly' => \App\Http\Middleware\BlockDemoWrites::class,
 
+            // 앱 전용 — 토큰이 곧 행사라 위 두 미들웨어(라우트의 {event} 를 봄)를 쓸 수 없다.
+            'api.writable' => \App\Http\Middleware\EnsureApiEventWritable::class,
+
             // Sanctum 토큰 능력 검사 — 심사위원 토큰(judge)과 관리자 토큰(admin)을 가른다.
             // Laravel 12+ 는 이 별칭을 자동 등록하지 않으므로 직접 넣어야 한다.
             'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,

@@ -2,17 +2,27 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\SetupRejected;
 use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\Criterion;
 use App\Models\Event;
 use App\Models\Judge;
+use App\Services\EventSetup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * 행사 설정 화면. 규칙 자체는 App\Services\EventSetup 에 있고 여기서는 표현만 맡는다 —
+ * 네이티브 앱(Api\AdminApiController)이 같은 서비스를 쓰므로 규칙이 갈라지지 않는다.
+ */
 class SetupController extends Controller
 {
+    public function __construct(private readonly EventSetup $setup)
+    {
+    }
+
     /** 기본설정 화면 — 집계 방식 / 최종집계표 서명 / 행사 삭제 */
     public function index(Event $event): View
     {
@@ -54,24 +64,7 @@ class SetupController extends Controller
     {
         $request->validate(['bulk' => ['required', 'string', 'max:10000']], [], ['bulk' => '평가 대상']);
 
-        $order = (int) $event->candidates()->max('sort_order');
-        $added = 0;
-
-        foreach (preg_split('/\r\n|\r|\n/', $request->input('bulk')) as $line) {
-            $line = trim($line);
-            if ($line === '') {
-                continue;
-            }
-
-            [$name, $affiliation] = array_pad(array_map('trim', preg_split('/[,|\t]/', $line, 2)), 2, null);
-
-            $event->candidates()->create([
-                'name'        => mb_substr($name, 0, 100),
-                'affiliation' => $affiliation ? mb_substr($affiliation, 0, 100) : null,
-                'sort_order'  => ++$order,
-            ]);
-            $added++;
-        }
+        $added = count($this->setup->importCandidates($event, $request->input('bulk')));
 
         return back()->with('status', "평가 대상 {$added}건이 등록되었습니다.");
     }
@@ -85,9 +78,7 @@ class SetupController extends Controller
     }
 
     /**
-     * 평가 항목 등록.
-     * - 1레벨(parent_id 없음): 1레벨 배점 합계 100 초과 방지
-     * - 2레벨(parent_id 있음): 해당 1레벨 배점 초과 방지, 채점은 2레벨에서만 이뤄짐
+     * 평가 항목 등록. 배점 규칙은 EventSetup 에 있다.
      */
     public function storeCriterion(Request $request, Event $event): RedirectResponse
     {
@@ -98,42 +89,11 @@ class SetupController extends Controller
             'parent_id'   => ['nullable', 'integer'],
         ], [], ['name' => '항목명', 'max_score' => '배점', 'parent_id' => '1레벨 항목']);
 
-        if (! empty($data['parent_id'])) {
-            // 2레벨: 부모는 이 행사의 1레벨 항목이어야 함
-            $parent = $event->criteria()->whereNull('parent_id')->findOrFail($data['parent_id']);
-
-            // 1레벨이 이미 말단 항목으로 채점된 상태면 구조 변경 금지 (점수 왜곡 방지)
-            if ($parent->scores()->exists()) {
-                return back()->withErrors([
-                    'parent_id' => "'{$parent->name}' 항목에는 이미 입력된 점수가 있어 2레벨 항목을 추가할 수 없습니다. (점수 삭제 후 가능)",
-                ])->withInput();
-            }
-
-            $childTotal = (int) $parent->children()->sum('max_score');
-
-            if ($childTotal + $data['max_score'] > $parent->max_score) {
-                return back()->withErrors([
-                    'max_score' => "'{$parent->name}' 2레벨 배점 합계가 1레벨 배점 {$parent->max_score}점을 초과합니다. (현재 {$childTotal}점, 추가 가능 " . ($parent->max_score - $childTotal) . '점)',
-                ])->withInput();
-            }
-        } else {
-            // 1레벨: 합계 100 초과 방지
-            $currentTotal = (int) $event->topCriteria()->sum('max_score');
-
-            if ($currentTotal + $data['max_score'] > 100) {
-                return back()->withErrors([
-                    'max_score' => "1레벨 배점 합계가 100점을 초과합니다. (현재 {$currentTotal}점, 추가 가능 " . (100 - $currentTotal) . '점)',
-                ])->withInput();
-            }
+        try {
+            $this->setup->addCriterion($event, $data);
+        } catch (SetupRejected $e) {
+            return back()->withErrors($e->errors())->withInput();
         }
-
-        $event->criteria()->create([
-            'name'        => $data['name'],
-            'description' => $data['description'] ?? null,
-            'max_score'   => $data['max_score'],
-            'parent_id'   => $data['parent_id'] ?? null,
-            'sort_order'  => (int) $event->criteria()->max('sort_order') + 1,
-        ]);
 
         return back()->with('status', empty($data['parent_id']) ? '평가 항목(1레벨)이 등록되었습니다.' : '평가 항목(2레벨)이 등록되었습니다.');
     }
@@ -151,20 +111,7 @@ class SetupController extends Controller
     {
         $request->validate(['bulk' => ['required', 'string', 'max:5000']], [], ['bulk' => '심사위원']);
 
-        $added = 0;
-
-        foreach (preg_split('/\r\n|\r|\n/', $request->input('bulk')) as $line) {
-            $name = trim($line);
-            if ($name === '') {
-                continue;
-            }
-
-            $event->judges()->create([
-                'name' => mb_substr($name, 0, 50),
-                'code' => Judge::generateCode(),
-            ]);
-            $added++;
-        }
+        $added = count($this->setup->importJudges($event, $request->input('bulk')));
 
         return back()->with('status', "심사위원 {$added}명이 등록되었습니다. 접속 링크를 각 심사위원에게 전달하세요.");
     }
@@ -185,30 +132,10 @@ class SetupController extends Controller
         return view('admin.judges-print', compact('event', 'judges'));
     }
 
-    /**
-     * 심사 진행/마감 토글.
-     * 마감 시 심사위원 접속 코드를 회수(null)해 다른 행사와 코드가 중복될 여지를 없애고,
-     * 재개 시 새 코드를 발급한다 (링크 재전달 필요).
-     */
+    /** 심사 진행/마감 토글. 코드 회수·토큰 폐기 규칙은 EventSetup 에 있다. */
     public function toggleOpen(Event $event): RedirectResponse
     {
-        $event->update(['is_open' => ! $event->is_open]);
-
-        if (! $event->is_open) {
-            $event->judges()->update(['code' => null]);
-
-            // 코드를 회수했으면 그 코드로 발급된 앱 토큰도 함께 죽여야 한다.
-            // 안 그러면 앱이 마감 뒤에도 계속 채점할 수 있다.
-            $event->judges()->get()->each(fn ($judge) => $judge->tokens()->delete());
-
-            return back()->with('status', '심사가 마감되었습니다. 심사위원 접속 코드가 모두 회수되어 더 이상 접속할 수 없습니다.');
-        }
-
-        foreach ($event->judges()->whereNull('code')->get() as $judge) {
-            $judge->update(['code' => Judge::generateCode()]);
-        }
-
-        return back()->with('status', '심사가 재개되었습니다. 심사위원 접속 코드가 새로 발급되었으니 링크를 다시 전달하세요.');
+        return back()->with('status', $this->setup->toggleOpen($event));
     }
 
     /** 집계 방식 변경 — all: 전체 합계·평균 / trimmed: 항목별 최고·최저 제외 + 심사위원 화면 노출 + 선정자(선정기관) 수 */
@@ -220,11 +147,7 @@ class SetupController extends Controller
             'pass_count'     => ['nullable', 'integer', 'min:1', 'max:1000'],
         ], [], ['scoring_method' => '집계 방식', 'is_blind' => '심사위원 화면', 'pass_count' => '선정자 수']);
 
-        $event->update([
-            'scoring_method' => $data['scoring_method'],
-            'is_blind'       => $data['is_blind'],
-            'pass_count'     => $data['pass_count'] ?? null,
-        ]);
+        $this->setup->updateScoringMethod($event, $data);
 
         $method = $event->scoring_method === 'trimmed'
             ? '집계 방식이 "평가대상별 최고·최저 총점 심사위원 제외"로 변경되었습니다.'

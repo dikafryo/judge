@@ -36,11 +36,30 @@ Route::prefix('v1')->group(function () {
             Route::put('/judge/signature', [JudgeApiController::class, 'storeSignature'])->name('api.judge.signature');
         });
 
-        /* 관리자 */
+        /* 관리자 — 토큰이 곧 행사라 URL 에 행사 id 를 싣지 않는다 */
         Route::middleware('abilities:admin')->prefix('admin')->group(function () {
             Route::get('/event', [AdminApiController::class, 'show'])->name('api.admin.event');
+            Route::get('/setup', [AdminApiController::class, 'setup'])->name('api.admin.setup');
             Route::get('/dashboard', [AdminApiController::class, 'dashboard'])->name('api.admin.dashboard');
             Route::get('/print-url', [AdminApiController::class, 'printUrl'])->name('api.admin.print-url');
+
+            // 재개는 마감 상태에서도 돼야 한다. 체험용 행사는 어느 쪽이든 막힌다.
+            Route::post('/toggle-open', [AdminApiController::class, 'toggleOpen'])
+                ->middleware('api.writable:closed-ok')->name('api.admin.toggle-open');
+
+            // 설정 변경은 마감되면 막힌다 — 웹(event.open)과 같은 규칙이다.
+            Route::middleware('api.writable')->group(function () {
+                Route::put('/scoring-method', [AdminApiController::class, 'updateScoringMethod'])->name('api.admin.scoring-method');
+
+                Route::post('/criteria', [AdminApiController::class, 'storeCriterion'])->name('api.admin.criteria.store');
+                Route::delete('/criteria/{criterion}', [AdminApiController::class, 'destroyCriterion'])->name('api.admin.criteria.destroy');
+
+                Route::post('/candidates', [AdminApiController::class, 'storeCandidates'])->name('api.admin.candidates.store');
+                Route::delete('/candidates/{candidate}', [AdminApiController::class, 'destroyCandidate'])->name('api.admin.candidates.destroy');
+
+                Route::post('/judges', [AdminApiController::class, 'storeJudges'])->name('api.admin.judges.store');
+                Route::delete('/judges/{judge}', [AdminApiController::class, 'destroyJudge'])->name('api.admin.judges.destroy');
+            });
         });
     });
 });
