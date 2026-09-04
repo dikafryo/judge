@@ -248,7 +248,77 @@ php artisan judge:demo
 
 ---
 
-## 8. 문제 해결
+## 8. PWA — 앱으로 설치해 쓰기
+
+이 서비스는 **PWA(Progressive Web App)** 입니다. 앱스토어 등록이나 별도 빌드 없이,
+브라우저에서 홈 화면에 추가하면 주소창 없는 전체화면 앱으로 실행됩니다.
+
+| 파일 | 역할 |
+|---|---|
+| `public/manifest.json` | 앱 이름·아이콘·시작 URL·표시 모드. **확장자 주의** — nginx 기본 `mime.types`에 `webmanifest`가 없어 `.json`을 쓴다 |
+| `public/sw.js` | 서비스워커. 앱 셸·CDN 자산 캐시 + 심사위원 화면 오프라인 폴백 |
+| `public/offline.html` | 네트워크가 없고 캐시에도 없을 때 보여주는 안내 화면 (CSS 인라인) |
+| `public/icons/*.png` | 앱 아이콘 6종 |
+| `tools/make-icons.php` | 아이콘 생성기 — `php tools/make-icons.php` |
+
+### 설치 조건
+
+- **HTTPS 필수.** 서비스워커는 `https://` 또는 `localhost`에서만 등록됩니다.
+  리버스 프록시 뒤라면 `.env`의 `APP_URL`이 `https://`인지 확인하세요.
+- 별도 설치 작업은 없습니다. 위 파일들이 문서 루트(`public/`)에 있고 200으로 서빙되면 끝입니다.
+
+```bash
+# 정상 서빙 확인
+curl -sI https://<도메인>/manifest.json   # → 200 / application/json
+curl -sI https://<도메인>/sw.js           # → 200 / application/javascript
+```
+
+### 오프라인 동작
+
+행사장 와이파이가 불안정한 상황을 전제로 설계했습니다.
+
+- **심사위원 화면**(`/judge/{코드}`)은 network-first로 캐시됩니다 — 연결이 끊겨도 채점 화면이 열립니다.
+- 입력값은 제출 전에도 `localStorage`에 보관되고, 끊긴 상태로 제출하면 **대기열**에 담겼다가
+  연결 복귀 시 자동 전송됩니다. 서버의 점수 저장 API가 대상 단위 upsert라 재전송이 안전합니다.
+- 재전송 직전에 `GET /csrf`로 세션 토큰을 다시 받습니다(캐시된 화면의 토큰은 만료됐을 수 있음).
+- **관리자 화면은 캐시하지 않습니다.** 오래된 집계를 최신으로 오인해 발표하는 사고를 막기 위해서입니다.
+
+### 유지보수 시 주의
+
+> 캐시 대상이나 서비스워커 로직을 바꾸면 **`public/sw.js`의 `SW_VERSION`을 반드시 올리세요.**
+> 이 값이 캐시 이름이 되고, 구버전 캐시는 `activate`에서 삭제됩니다.
+> 올리지 않으면 사용자 브라우저에 옛 자산이 남아 "고쳤는데 안 바뀐다"가 됩니다.
+>
+> **CDN 캐시도 함께 봐야 합니다.** 이 사이트는 Cloudflare 뒤에 있어 정적 파일이 엣지에
+> 4시간(`max-age=14400`) 묶입니다. `sw.js` 와 `downloads/judge-latest.apk` 는 이름이 그대로인 채
+> 내용만 바뀌므로, nginx 에서 `Cache-Control: no-cache` 를 붙여 매번 검증하게 해 두었습니다
+> (`sw4u.kr.conf` 의 judge 블록). 버전이 이름에 박힌 APK 는 불변이라 그대로 캐시해도 됩니다.
+
+아이콘 색·형태를 바꾸려면 `tools/make-icons.php` 상단의 색 상수를 고치고 다시 실행하면 됩니다.
+
+### 안드로이드 앱 (APK)
+
+PWA 와 별개로, 같은 사이트를 감싸는 **안드로이드 앱**을 자체 배포한다.
+플레이스토어에는 올리지 않는다.
+
+- 앱 프로젝트: `/var/services/web/apps/judge-app` (Flutter WebView 래퍼) — 빌드·서명 방법은 그쪽 README
+- 배포 결과물: `public/downloads/*.apk` + `public/app-release.json`
+- 안내 페이지: `https://<도메인>/app`
+
+앱은 화면을 스스로 그리지 않고 이 사이트를 그대로 띄운다. 따라서 **화면 수정은 앱을 다시 빌드하지 않고
+이 저장소만 고치면 즉시 반영된다.** 앱을 다시 배포해야 하는 경우는 껍데기 동작(뒤로가기, 업데이트 확인 등)을
+바꿀 때뿐이다.
+
+앱은 User-Agent 끝에 `JudgeApp/<버전>` 을 붙이고, 서버는 이걸 보고 앱 안에서
+"앱 설치" 버튼과 인쇄 버튼을 감춘다 (`AppServiceProvider` 의 `$isJudgeApp`).
+
+> nginx 에서 APK MIME 을 지정할 때 **server 블록에 `types {}` 를 쓰면 안 된다.**
+> 상속된 MIME 맵 전체를 덮어써서 `sw.js` 가 `octet-stream` 이 되고 서비스워커 등록이 깨진다.
+> `location ~ \.apk$` 에 `default_type` 을 주는 방식으로 좁힐 것.
+
+---
+
+## 9. 문제 해결
 
 | 증상 | 확인 사항 |
 |---|---|
@@ -258,15 +328,20 @@ php artisan judge:demo
 | 폼 제출 시 "안전하지 않은 폼" 경고 | 리버스 프록시 뒤라면 `bootstrap/app.php`의 `trustProxies` 설정과 `APP_URL`이 `https://`인지 확인 |
 | DB 접속 오류 | `.env`의 `DB_HOST`/`DB_PORT`/`DB_DATABASE`/계정 권한 확인, DB 서비스 기동 여부 확인 |
 | 행사가 예상보다 일찍 삭제됨 | `events:prune`은 미마감 행사를 30일 후 삭제합니다 — 보관하려면 심사 종료 후 반드시 **마감 처리**하세요 |
+| "앱 설치" 버튼이 안 보임 | HTTPS인지, `/manifest.json`과 `/sw.js`가 200인지 확인. iOS 사파리는 버튼 대신 "공유 → 홈 화면에 추가" 안내가 뜹니다 |
+| 코드를 고쳤는데 화면이 그대로 | 서비스워커 캐시입니다. `public/sw.js`의 `SW_VERSION`을 올리세요 |
+| `/app`에 "아직 게시된 앱이 없습니다" | `public/app-release.json`이 없거나, 가리키는 APK 파일이 실제로 없습니다 |
+| 앱에서 오프라인 저장이 안 됨 | WebView의 DOM storage 문제입니다. `judge-app/README.md`의 실기기 확인 항목 4번 참고 |
 
 ---
 
-## 9. 기술 스택 요약
+## 10. 기술 스택 요약
 
 - PHP 8.3+ / Laravel 13
 - MariaDB / MySQL (Eloquent + 마이그레이션)
 - Blade + Tailwind CSS(Play CDN) + Alpine.js — 빌드 스텝 없음
 - 실시간 갱신: AJAX 폴링(5초 간격) — WebSocket/Reverb 불필요, 인프라 부담 최소화
+- PWA: 매니페스트 + 서비스워커(정적 파일) — 번들러·Node 불필요
 
 ## 라이선스
 

@@ -50,6 +50,23 @@ class DemoController extends Controller
         return redirect()->route('admin.dashboard', $event);
     }
 
+    /**
+     * 출력물 체험 — 최종집계표(A4 결재본)는 관리자 세션이 있어야 열리므로,
+     * admin() 과 같은 방식으로 세션만 부여하고 인쇄 화면으로 넘긴다.
+     */
+    public function print(Request $request): RedirectResponse
+    {
+        $event = $this->demoEvent();
+
+        if (! $event) {
+            return redirect()->route('demo')->withErrors(['demo' => '체험용 샘플 행사가 아직 준비되지 않았습니다.']);
+        }
+
+        $request->session()->put('event_admin_' . $event->id, true);
+
+        return redirect()->route('admin.print', $event);
+    }
+
     /** 현재 공개 중인 데모 행사 (가장 최근 것 1건) */
     private function demoEvent(): ?Event
     {

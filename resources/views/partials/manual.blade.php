@@ -177,6 +177,27 @@
                         <p>상단 🖨️ 버튼으로 내 점수가 정리된 개별심사표를 인쇄할 수 있습니다.</p>
                     </section>
 
+                    @unless ($isJudgeApp)
+                    <section>
+                        <h4 class="font-bold text-slate-800 text-base mb-2">5. 앱으로 설치하기 (권장)</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong>안드로이드</strong>: <a href="{{ route('app.download') }}" class="text-indigo-600 underline">앱 내려받기</a> 페이지에서 설치 (권장) 또는 헤더 우측 <strong>⤓</strong> 버튼.</li>
+                            <li><strong>아이폰</strong>: 사파리 아래 <strong>공유</strong> → <strong>홈 화면에 추가</strong>.</li>
+                            <li>홈 화면 아이콘으로 열면 주소창 없이 전체화면으로 실행되고, 매번 코드를 다시 입력하지 않아도 됩니다.</li>
+                        </ul>
+                    </section>
+                    @endunless
+
+                    <section>
+                        <h4 class="font-bold text-slate-800 text-base mb-2">6. 인터넷이 끊겨도 괜찮습니다</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>입력한 점수는 <strong>기기에 먼저 저장</strong>되므로 화면을 닫거나 대상을 바꿔도 사라지지 않습니다.</li>
+                            <li>연결이 끊긴 채 <strong>[점수 제출]</strong>을 눌러도 됩니다. 대상 목록에 <strong>대기</strong> 배지가 붙고,
+                                연결이 돌아오면 자동으로 전송됩니다. 다시 입력하지 않으셔도 됩니다.</li>
+                            <li>서명도 같은 방식으로 처리됩니다.</li>
+                        </ul>
+                    </section>
+
                     <div class="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-xs text-slate-500">
                         ℹ️ 심사가 마감되면 접속할 수 없습니다. 수정할 것이 있으면 마감 전에 관리자에게 알려 주세요.
                     </div>
@@ -184,6 +205,19 @@
 
                 {{-- ================= FAQ ================= --}}
                 <div x-show="tab === 'faq'" x-cloak class="space-y-4">
+                    <div class="rounded-xl border border-slate-200 p-4">
+                        <div class="font-bold text-slate-700 mb-1">Q. 심사 도중 인터넷이 끊기면 점수가 날아가나요?</div>
+                        <p>아닙니다. 입력한 점수는 기기에 먼저 저장되고, 끊긴 상태에서 제출하면 대기열에 담깁니다.
+                           연결이 돌아오는 즉시 자동으로 전송되며 대상 목록의 <strong>대기</strong> 배지가 사라집니다.
+                           다만 <strong>전송이 끝나기 전에 심사가 마감되면</strong> 그 점수는 반영되지 않으니,
+                           마감 전에 배지가 모두 없어졌는지 확인해 주세요.</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 p-4" @if ($isJudgeApp) hidden @endif>
+                        <div class="font-bold text-slate-700 mb-1">Q. 앱처럼 설치해서 쓸 수 있나요?</div>
+                        <p>네. 안드로이드는 <a href="{{ route('app.download') }}" class="text-indigo-600 underline">앱 내려받기</a> 페이지에서
+                           설치 파일을 받으실 수 있고, 헤더 우측 <strong>⤓</strong> 버튼으로 브라우저에서 바로 설치해도 됩니다.
+                           아이폰은 사파리 <strong>공유 → 홈 화면에 추가</strong>입니다. 앱스토어 등록은 하지 않았습니다.</p>
+                    </div>
                     <div class="rounded-xl border border-slate-200 p-4">
                         <div class="font-bold text-slate-700 mb-1">Q. 관리 비밀번호를 잊어버렸어요.</div>
                         <p>복구되지 않습니다. 사이트 운영자에게 문의하거나 행사를 새로 만드세요.</p>

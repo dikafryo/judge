@@ -33,6 +33,16 @@
         .nm-word{font-weight:700;letter-spacing:-.05em;color:#1F2933}
         .nm-word b{font-weight:700;color:#D1802A}
     </style>
+    {{-- PWA — 홈 화면 설치 / 앱 아이콘 / 오프라인 (public/manifest.json · public/sw.js) --}}
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1F2933">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="심사">
+    <meta name="mobile-web-app-capable" content="yes">
+
     @stack('head')
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 antialiased">
@@ -40,16 +50,19 @@
     <header class="bg-white border-b border-slate-200">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-2 font-bold text-lg text-slate-900">
-                {{-- neisme Toolgrid 로고 → neis.me 홈 --}}
-                <a href="https://neis.me/" class="nm-logo" title="neis.me 홈으로 이동">
-                    <span class="nm-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-                    <span class="nm-word">neis<b>.</b>me</span>
-                </a>
-                <span class="text-slate-300 font-normal" aria-hidden="true">&rsaquo;</span>
+                @unless ($isJudgeApp)
+                    {{-- neisme Toolgrid 로고 → neis.me 홈. 앱 안에서는 바깥 브랜드를 노출하지 않는다 --}}
+                    <a href="https://neis.me/" class="nm-logo" title="neis.me 홈으로 이동">
+                        <span class="nm-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                        <span class="nm-word">neis<b>.</b>me</span>
+                    </a>
+                    <span class="text-slate-300 font-normal" aria-hidden="true">&rsaquo;</span>
+                @endunless
                 <a href="{{ route('home') }}" class="hover:text-indigo-600">온라인 심사 시스템</a>
             </div>
             <div class="flex items-center text-sm text-slate-500">
                 @yield('header-right')
+                @include('partials.pwa-install')
                 @include('partials.manual')
             </div>
         </div>
@@ -82,5 +95,14 @@
     </footer>
 
     @stack('scripts')
+
+    {{-- 서비스워커 등록 — 실패해도 앱은 지금까지처럼 온라인으로 동작해야 하므로 조용히 무시한다 --}}
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function () {});
+            });
+        }
+    </script>
 </body>
 </html>
