@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\AppDownloadController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\DemoController;
@@ -24,6 +25,24 @@ Route::post('/events', [EventController::class, 'store'])->name('events.store');
 */
 Route::get('/demo', [DemoController::class, 'index'])->name('demo');
 Route::get('/demo/admin', [DemoController::class, 'admin'])->name('demo.admin');
+Route::get('/demo/print', [DemoController::class, 'print'])->name('demo.print');
+
+/*
+|--------------------------------------------------------------------------
+| CSRF 토큰 재발급 — PWA 오프라인 큐 전용
+|--------------------------------------------------------------------------
+| 서비스워커가 캐시해 둔 화면으로 접속하면 HTML 안의 토큰이 이미 만료됐을 수 있다.
+| 오프라인에 쌓인 점수·서명을 재전송하기 직전에 현재 세션 토큰을 다시 받아간다.
+*/
+Route::get('/csrf', fn () => response()->json(['token' => csrf_token()]))->name('csrf.token');
+
+/*
+|--------------------------------------------------------------------------
+| 안드로이드 앱 내려받기 안내
+|--------------------------------------------------------------------------
+| APK 파일 자체는 nginx 가 public/downloads/ 에서 정적으로 내보낸다.
+*/
+Route::get('/app', [AppDownloadController::class, 'index'])->name('app.download');
 
 /*
 |--------------------------------------------------------------------------

@@ -1,0 +1,26 @@
+{
+    "name": "온라인 심사 시스템",
+    "short_name": "심사",
+    "description": "심사위원이 점수를 입력하는 즉시 자동 집계되는 온라인 심사 시스템",
+    "lang": "ko",
+    "dir": "ltr",
+    "start_url": "/?src=pwa",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#F1F5F9",
+    "theme_color": "#1F2933",
+    "categories": ["productivity", "education"],
+    "icons": [
+        { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+        { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+        { "src": "/icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+    ],
+    "shortcuts": [
+        { "name": "심사위원 입장", "short_name": "입장", "url": "/?src=pwa-shortcut", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+        { "name": "행사 관리", "short_name": "행사", "url": "/events?src=pwa-shortcut" },
+        { "name": "체험해보기", "short_name": "체험", "url": "/demo?src=pwa-shortcut" }
+    ]
+}
