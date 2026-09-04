@@ -49,7 +49,10 @@ Route::get('/app', [AppDownloadController::class, 'index'])->name('app.download'
 | 심사위원 — 접속 코드 기반, 로그인 없음
 |--------------------------------------------------------------------------
 */
-Route::post('/judge/enter', [JudgeController::class, 'enter'])->name('judge.enter');
+// 접속 코드는 6자리 숫자(90만 가지)라 대입이 가능하다. API 와 같은 제한을 건다.
+Route::post('/judge/enter', [JudgeController::class, 'enter'])
+    ->middleware('throttle:5,1')
+    ->name('judge.enter');
 
 Route::prefix('judge/{judge:code}')->middleware('demo.readonly')->group(function () {
     Route::get('/', [JudgeController::class, 'show'])->name('judge.show');

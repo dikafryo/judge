@@ -3,11 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Event extends Model
+class Event extends Model implements AuthenticatableContract
 {
+    // 관리자는 행사 비밀번호를 토큰으로 교환해 앱에서 쓴다
+    // Sanctum 토큰의 주체가 되려면 Authenticatable 이어야 한다.
+    // 없으면 인증된 요청이 throttle 미들웨어를 지날 때 getAuthIdentifier() 로 500 이 난다.
+    use Authenticatable;
+    use HasApiTokens;
     use HasFactory;
 
     protected $fillable = ['name', 'description', 'event_date', 'admin_password', 'is_open', 'is_demo', 'scoring_method', 'pass_count', 'is_blind', 'report_signers', 'show_judge_signs'];

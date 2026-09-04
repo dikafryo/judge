@@ -30,7 +30,11 @@ class DashboardController extends Controller
     }
 
     /** 공용 집계 로직 — 대시보드 폴링 / CSV / 인쇄가 공유 */
-    private function aggregate(Event $event): array
+    /**
+     * 집계 계산. 네이티브 앱 API(AdminApiController)도 이 메서드를 그대로 쓴다 —
+     * 앱과 웹이 다른 숫자를 보여주면 안 되므로 계산은 여기 한 곳에만 둔다.
+     */
+    public function aggregate(Event $event): array
     {
         $event->load(['candidates', 'criteria', 'judges']);
 
