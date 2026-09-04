@@ -14,6 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureEventOpen
 {
+    /** API 쪽 가드(EnsureApiEventWritable)도 같은 문구를 쓴다. */
+    public const MESSAGE = '심사가 마감되어 수정할 수 없습니다. 수정하려면 먼저 심사를 재개하세요.';
+
     public function handle(Request $request, Closure $next): Response
     {
         $event = $request->route('event');
@@ -23,13 +26,11 @@ class EnsureEventOpen
         }
 
         if (! $event->is_open) {
-            $message = '심사가 마감되어 수정할 수 없습니다. 수정하려면 먼저 심사를 재개하세요.';
-
             if ($request->expectsJson()) {
-                return response()->json(['message' => $message], 423);
+                return response()->json(['message' => self::MESSAGE], 423);
             }
 
-            return back()->withErrors(['event' => $message]);
+            return back()->withErrors(['event' => self::MESSAGE]);
         }
 
         return $next($request);

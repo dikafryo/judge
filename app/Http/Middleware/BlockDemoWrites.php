@@ -16,7 +16,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class BlockDemoWrites
 {
-    private const MESSAGE = '체험용 샘플 행사입니다. 화면은 실제와 동일하지만 저장·수정은 되지 않습니다.';
+    /** API 쪽 가드(EnsureApiEventWritable)도 같은 문구를 쓴다 — 두 곳이 다르게 말하면 안 된다. */
+    public const MESSAGE = '체험용 샘플 행사입니다. 화면은 실제와 동일하지만 저장·수정은 되지 않습니다.';
 
     public function handle(Request $request, Closure $next): Response
     {
