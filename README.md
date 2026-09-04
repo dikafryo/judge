@@ -301,13 +301,17 @@ curl -sI https://<도메인>/sw.js           # → 200 / application/javascript
 PWA 와 별개로, 같은 사이트를 감싸는 **안드로이드 앱**을 자체 배포한다.
 플레이스토어에는 올리지 않는다.
 
-- 앱 프로젝트: `/var/services/web/apps/judge-app` (Flutter WebView 래퍼) — 빌드·서명 방법은 그쪽 README
+- 앱 프로젝트: **https://github.com/dikafryo/judge-app** (Flutter WebView 래퍼) — 빌드·서명 방법은 그쪽 README
 - 배포 결과물: `public/downloads/*.apk` + `public/app-release.json`
 - 안내 페이지: `https://<도메인>/app`
 
 앱은 화면을 스스로 그리지 않고 이 사이트를 그대로 띄운다. 따라서 **화면 수정은 앱을 다시 빌드하지 않고
 이 저장소만 고치면 즉시 반영된다.** 앱을 다시 배포해야 하는 경우는 껍데기 동작(뒤로가기, 업데이트 확인 등)을
 바꿀 때뿐이다.
+
+> **앱은 접속 주소가 `judge.sw4u.kr` 로 고정되어 있다.** 이 심사 시스템을 다른 도메인에 설치했다면
+> 그 APK 는 그대로 쓸 수 없고, 앱 저장소에서 주소를 바꿔 직접 빌드(+ 자기 서명 키)해야 한다.
+> 반면 **PWA 는 도메인에 의존하지 않으므로** 어디에 설치하든 "홈 화면에 추가"로 바로 앱처럼 쓸 수 있다.
 
 앱은 User-Agent 끝에 `JudgeApp/<버전>` 을 붙이고, 서버는 이걸 보고 앱 안에서
 "앱 설치" 버튼과 인쇄 버튼을 감춘다 (`AppServiceProvider` 의 `$isJudgeApp`).
