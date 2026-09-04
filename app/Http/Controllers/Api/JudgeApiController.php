@@ -35,8 +35,13 @@ class JudgeApiController extends Controller
     {
         $judge = $this->judge($request);
         $event = $judge->event()->with(['candidates', 'criteria'])->firstOrFail();
+        $payload = $payloads->build($judge, $event);
 
-        return response()->json($payloads->build($judge, $event));
+        // PHP는 빈 연관 배열을 JSON 배열([])로 직렬화한다. 앱에서 scores는
+        // candidate_id를 키로 쓰는 객체이므로, 점수가 없어도 반드시 {}로 내려보낸다.
+        $payload['scores'] = (object) $payload['scores'];
+
+        return response()->json($payload);
     }
 
     /**
@@ -60,7 +65,7 @@ class JudgeApiController extends Controller
         }
 
         $data = $request->validate([
-            'scores'   => ['required', 'array', 'min:1'],
+            'scores' => ['required', 'array', 'min:1'],
             'scores.*' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -82,7 +87,7 @@ class JudgeApiController extends Controller
         $judge->update(['signature' => $data['signature'], 'signed_at' => now()]);
 
         return response()->json([
-            'message'   => '서명이 저장되었습니다.',
+            'message' => '서명이 저장되었습니다.',
             'signed_at' => $judge->signed_at?->toIso8601String(),
         ]);
     }

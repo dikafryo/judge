@@ -42,7 +42,7 @@ class JudgeApiTest extends TestCase
 
     private function asJudge(Judge $judge): static
     {
-        return $this->withHeader('Authorization', 'Bearer ' . $this->token($judge));
+        return $this->withHeader('Authorization', 'Bearer '.$this->token($judge));
     }
 
     public function test_코드로_토큰을_받는다(): void
@@ -85,6 +85,17 @@ class JudgeApiTest extends TestCase
         $this->asJudge($judge)->getJson('/api/v1/judge/me')
             ->assertOk()
             ->assertJsonStructure(['judge', 'event', 'groups', 'candidates', 'scores', 'hasSignature', 'totalMax']);
+    }
+
+    public function test_점수가_없어도_scores는_json_객체로_내려받는다(): void
+    {
+        ['judge' => $judge] = $this->makeEvent();
+
+        $content = $this->asJudge($judge)->getJson('/api/v1/judge/me')
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('"scores":{}', $content);
     }
 
     public function test_블라인드_행사는_대상_이름을_주지_않는다(): void
@@ -144,7 +155,7 @@ class JudgeApiTest extends TestCase
     public function test_서명을_저장한다(): void
     {
         ['judge' => $judge] = $this->makeEvent();
-        $png = 'data:image/png;base64,' . base64_encode('fake');
+        $png = 'data:image/png;base64,'.base64_encode('fake');
 
         $this->asJudge($judge)->putJson('/api/v1/judge/signature', ['signature' => $png])
             ->assertOk()->assertJsonStructure(['message', 'signed_at']);
