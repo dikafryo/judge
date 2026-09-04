@@ -3,12 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Judge extends Model
+class Judge extends Model implements AuthenticatableContract
 {
+    // 심사위원은 접속 코드를 토큰으로 교환해 앱에서 쓴다
+    // Sanctum 토큰의 주체가 되려면 Authenticatable 이어야 한다.
+    // 없으면 인증된 요청이 throttle 미들웨어를 지날 때 getAuthIdentifier() 로 500 이 난다.
+    use Authenticatable;
+    use HasApiTokens;
     use HasFactory;
 
     protected $fillable = ['event_id', 'name', 'code', 'signature', 'signed_at'];

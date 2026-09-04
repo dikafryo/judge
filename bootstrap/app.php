@@ -7,6 +7,9 @@ use Illuminate\Foundation\Configuration\Middleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        // 네이티브 앱 전용. 웹은 세션+CSRF, 앱은 Bearer 토큰으로 완전히 분리한다.
+        api: __DIR__.'/../routes/api.php',
+        apiPrefix: 'api',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -23,6 +26,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'event.admin' => \App\Http\Middleware\EnsureEventAdmin::class,
             'event.open'  => \App\Http\Middleware\EnsureEventOpen::class,
             'demo.readonly' => \App\Http\Middleware\BlockDemoWrites::class,
+
+            // Sanctum 토큰 능력 검사 — 심사위원 토큰(judge)과 관리자 토큰(admin)을 가른다.
+            // Laravel 12+ 는 이 별칭을 자동 등록하지 않으므로 직접 넣어야 한다.
+            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'ability'   => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

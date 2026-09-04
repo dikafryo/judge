@@ -197,6 +197,10 @@ class SetupController extends Controller
         if (! $event->is_open) {
             $event->judges()->update(['code' => null]);
 
+            // 코드를 회수했으면 그 코드로 발급된 앱 토큰도 함께 죽여야 한다.
+            // 안 그러면 앱이 마감 뒤에도 계속 채점할 수 있다.
+            $event->judges()->get()->each(fn ($judge) => $judge->tokens()->delete());
+
             return back()->with('status', '심사가 마감되었습니다. 심사위원 접속 코드가 모두 회수되어 더 이상 접속할 수 없습니다.');
         }
 

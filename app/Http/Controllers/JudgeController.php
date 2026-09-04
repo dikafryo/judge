@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ScoreRejected;
 use App\Models\Candidate;
 use App\Models\Judge;
+use App\Services\JudgePayloadService;
+use App\Services\ScoreWriter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class JudgeController extends Controller
@@ -27,56 +29,13 @@ class JudgeController extends Controller
     }
 
     /** 심사 페이지 — 대상 목록 + 항목별 점수 입력 폼 */
-    public function show(Judge $judge): View
+    public function show(Judge $judge, JudgePayloadService $payloads): View
     {
         $event = $judge->event()->with(['candidates', 'criteria'])->firstOrFail();
 
-        // 이미 입력한 점수: { candidate_id: { criterion_id: score } }
-        $myScores = $judge->scores()
-            ->get()
-            ->groupBy('candidate_id')
-            ->map(fn ($group) => $group->pluck('score', 'criterion_id'));
-
-        // 평가항목 2단계 구조: 대분류(items = 서브항목들 또는 자기 자신) — 채점은 말단(items)에서만
-        $byParent = $event->criteria->groupBy('parent_id');
-        $mapItem  = fn ($c) => [
-            'id'          => $c->id,
-            'name'        => $c->name,
-            'description' => $c->description,
-            'max_score'   => (int) $c->max_score,
-        ];
-        $groups = $event->criteria->whereNull('parent_id')->values()->map(function ($top) use ($byParent, $mapItem) {
-            $children = $byParent->get($top->id, collect());
-
-            return [
-                'id'           => $top->id,
-                'name'         => $top->name,
-                'max_score'    => (int) $top->max_score,
-                'has_children' => $children->isNotEmpty(),
-                'items'        => ($children->isEmpty() ? collect([$top]) : $children)->map($mapItem)->values(),
-            ];
-        })->values();
-
-        $payload = [
-            'judge' => ['id' => $judge->id, 'name' => $judge->name, 'code' => $judge->code],
-            'event' => [
-                'name'     => $event->name,
-                'is_open'  => $event->is_open,
-                'is_blind' => $event->is_blind,
-            ],
-            'groups' => $groups,
-            // 심사위원 화면 노출 설정 — 블라인드면 심사번호만 (이름은 payload에도 싣지 않는다), 이름 공개면 이름·소속 포함
-            'candidates' => $event->candidates->values()->map(fn ($c, $i) => array_merge([
-                'id'     => $c->id,
-                'number' => sprintf('%02d', $i + 1),
-            ], $event->is_blind ? [] : [
-                'name'        => $c->name,
-                'affiliation' => $c->affiliation,
-            ]))->values(),
-            'scores'        => $myScores,
-            'hasSignature'  => ! empty($judge->signature),
-            'totalMax'      => (int) $event->criteria->whereNull('parent_id')->sum('max_score'),
-            'urls'          => [
+        // payload 조립은 서비스에 있다 — 네이티브 앱 API 가 같은 코드를 쓴다
+        $payload = $payloads->build($judge, $event) + [
+            'urls' => [
                 'scores'    => route('judge.scores', $judge),
                 'signature' => route('judge.signature', $judge),
                 'print'     => route('judge.print', $judge),
@@ -87,12 +46,10 @@ class JudgeController extends Controller
     }
 
     /**
-     * 점수 저장 (AJAX) — 대상 1건의 항목 점수를 upsert. 부분 제출 허용:
-     * 값이 있는 항목만 저장하고, 비워서 제출한 항목은 기존 저장값을 삭제한다
-     * (마지막 제출 상태가 그대로 최종 점수).
-     * 요청 형식: { candidate_id: 1, scores: { "<criterion_id>": 점수|null, ... } }
+     * 점수 저장 (AJAX) — 대상 1건의 항목 점수를 통째로 교체한다.
+     * 저장 규칙 자체는 ScoreWriter 에 있고 네이티브 앱 API 도 같은 코드를 쓴다.
      */
-    public function storeScores(Request $request, Judge $judge): JsonResponse
+    public function storeScores(Request $request, Judge $judge, ScoreWriter $writer): JsonResponse
     {
         $event = $judge->event;
 
@@ -106,64 +63,13 @@ class JudgeController extends Controller
             'scores.*'     => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        // 대상이 같은 행사 소속인지 검증
         $candidate = Candidate::where('event_id', $event->id)->findOrFail($data['candidate_id']);
 
-        // 항목이 이 행사의 말단 항목(채점 대상)인지 + 배점 초과 여부 검증
-        $leaves = $event->leafCriteria()->keyBy('id');
-        $filled = 0;
-
-        foreach ($data['scores'] as $criterionId => $value) {
-            $criterion = $leaves->get((int) $criterionId);
-
-            if (! $criterion) {
-                return response()->json(['message' => '잘못된 평가 항목이 포함되어 있습니다.'], 422);
-            }
-            if ($value === null) {
-                continue;
-            }
-            if ($value > $criterion->max_score) {
-                return response()->json([
-                    'message' => "'{$criterion->name}' 항목은 배점 {$criterion->max_score}점을 초과할 수 없습니다.",
-                ], 422);
-            }
-            $filled++;
+        try {
+            return response()->json($writer->save($judge, $candidate, $data['scores']));
+        } catch (ScoreRejected $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        if ($filled === 0) {
-            return response()->json(['message' => '최소 한 개 항목 이상 점수를 입력해 주세요.'], 422);
-        }
-
-        DB::transaction(function () use ($judge, $candidate, $data) {
-            foreach ($data['scores'] as $criterionId => $value) {
-                if ($value === null) {
-                    // 비워서 제출한 항목은 기존 점수 삭제 — 제출 상태 = 최종 상태
-                    $judge->scores()
-                        ->where('candidate_id', $candidate->id)
-                        ->where('criterion_id', (int) $criterionId)
-                        ->delete();
-
-                    continue;
-                }
-
-                $judge->scores()->updateOrCreate(
-                    ['candidate_id' => $candidate->id, 'criterion_id' => (int) $criterionId],
-                    ['score' => $value],
-                );
-            }
-        });
-
-        $total = (float) $judge->scores()->where('candidate_id', $candidate->id)->sum('score');
-
-        // 블라인드면 응답 메시지에도 이름 대신 심사번호만 사용
-        $number = $event->candidateNumbers()[$candidate->id] ?? $candidate->id;
-        $label  = $event->is_blind ? "심사번호 {$number}" : "{$number}. {$candidate->name}";
-
-        return response()->json([
-            'message'      => "{$label} 점수가 저장되었습니다.",
-            'candidate_id' => $candidate->id,
-            'total'        => $total,
-        ]);
     }
 
     /** 전자서명 저장 (AJAX) — canvas PNG dataURL */
