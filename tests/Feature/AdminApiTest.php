@@ -39,6 +39,28 @@ class AdminApiTest extends TestCase
         return ['Authorization' => 'Bearer ' . $this->token($event)];
     }
 
+    public function test_행사_목록에_체험용_샘플은_빠진다(): void
+    {
+        Event::factory()->create(['name' => '실제 행사']);
+        Event::factory()->demo()->create();
+
+        $events = $this->getJson('/api/v1/events')->assertOk()->json('events');
+
+        $this->assertCount(1, $events);
+        $this->assertSame('실제 행사', $events[0]['name']);
+    }
+
+    public function test_앱에서_행사를_만들면_바로_관리_토큰을_받는다(): void
+    {
+        $response = $this->postJson('/api/v1/events', [
+            'name' => '가을 심사', 'admin_password' => 'pw1234',
+        ])->assertStatus(201);
+
+        $this->getJson('/api/v1/admin/setup', [
+            'Authorization' => 'Bearer ' . $response->json('token'),
+        ])->assertOk();
+    }
+
     public function test_설정_화면에_필요한_것을_한_번에_준다(): void
     {
         $event = Event::factory()->create();

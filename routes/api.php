@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AdminApiController;
+use App\Http\Controllers\Api\EventApiController;
 use App\Http\Controllers\Api\JudgeApiController;
 use App\Http\Controllers\Api\SessionController;
 use Illuminate\Support\Facades\Route;
@@ -20,10 +21,16 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/meta', [SessionController::class, 'meta'])->name('api.meta');
 
+    // 웹의 /events 화면과 같은 목록. 앱 관리자 로그인에서 행사를 고르는 데 쓴다.
+    Route::get('/events', [EventApiController::class, 'index'])->name('api.events');
+
     // 로그인 시도는 분당 5회로 묶는다. 웹의 /judge/enter 에도 같은 제한을 건다.
     Route::middleware('throttle:5,1')->group(function () {
         Route::post('/judge/session', [SessionController::class, 'judge'])->name('api.judge.session');
         Route::post('/admin/session', [SessionController::class, 'admin'])->name('api.admin.session');
+
+        // 생성도 같은 제한 아래 둔다 — 열린 엔드포인트라 방치하면 행사 목록이 쓰레기로 찬다.
+        Route::post('/events', [EventApiController::class, 'store'])->name('api.events.store');
     });
 
     Route::middleware('auth:sanctum')->group(function () {
