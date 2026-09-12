@@ -64,10 +64,10 @@
         </div>
     @endunless
 
-    @if ($payload['totalMax'] !== 100)
-        <div class="mb-6 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 text-sm">
-            평가 항목 배점 합계가 100점이 아닙니다. 관리자에게 문의하세요. (현재 {{ $payload['totalMax'] }}점)
-        </div>
+    @if ($payload['totalMax'] !== $payload['maxTotal'])
+        <x-alert class="mb-6">
+            평가 항목 배점 합계가 {{ $payload['maxTotal'] }}점이 아닙니다. 관리자에게 문의하세요. (현재 {{ $payload['totalMax'] }}점)
+        </x-alert>
     @endif
 
     {{-- ================= 모바일 상단 고정 바 (lg 미만) =================
