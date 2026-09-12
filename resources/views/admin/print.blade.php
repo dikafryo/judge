@@ -102,25 +102,26 @@
                     'pass-row' => ($row['pass'] ?? null) === 'pass',
                     'rank1'    => ($row['rank'] ?? null) === 1,
                 ])>
-                    {{-- 등록순 정렬이므로 iteration = 심사번호 (심사위원 화면·개별심사표와 동일) --}}
-                    <td style="font-weight:bold">{{ sprintf('%02d', $loop->iteration) }}</td>
+                    {{-- 심사번호는 집계가 이미 매겨 둔 값을 쓴다 (심사위원 화면·개별심사표와 같은 번호) --}}
+                    <td style="font-weight:bold">{{ $row['number'] }}</td>
                     <td class="name">
                         {{ $row['name'] }}
                         @if ($row['affiliation'])<span style="color:#777"> ({{ $row['affiliation'] }})</span>@endif
                     </td>
                     @foreach ($data['judges'] as $judge)
                         @php
-                            $jid      = $judge['judge_id'];
-                            $total    = $row['by_judge'][$jid] ?? null;
-                            $excluded = $row['by_judge_excluded'][$jid] ?? 0;
-                            $kept     = $total !== null ? round($total - $excluded, 1) : null;
+                            // 절사에서 빠진 심사위원인지는 키가 있느냐로 판단한다.
+                            // 0점을 준 심사위원이 절사될 수도 있어 값의 크기로 보면 안 된다.
+                            $jid        = $judge['judge_id'];
+                            $total      = $row['by_judge'][$jid] ?? null;
+                            $isExcluded = isset($row['by_judge_excluded'][$jid]);
                         @endphp
                         <td>
                             @if ($total === null)
                                 -
-                            @elseif ($excluded > 0)
-                                {{-- 반영분(있으면) + 제외분(붉은 취소선) --}}
-                                @if ($kept > 0){{ $kept + 0 }}@endif<span class="excluded">{{ $excluded + 0 }}</span>
+                            @elseif ($isExcluded)
+                                {{-- 제외분은 붉은 취소선 — 총점을 통째로 빼므로 반영분은 없다 --}}
+                                <span class="excluded">{{ $total + 0 }}</span>
                             @else
                                 {{ $total + 0 }}
                             @endif

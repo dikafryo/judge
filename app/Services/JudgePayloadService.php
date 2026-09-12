@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Event;
 use App\Models\Judge;
+use Illuminate\Support\Collection;
 
 /**
  * 심사위원 화면에 내려보낼 데이터를 조립한다.
@@ -27,15 +28,15 @@ class JudgePayloadService
         return [
             'judge' => ['id' => $judge->id, 'name' => $judge->name, 'code' => $judge->code],
             'event' => [
-                'name'     => $event->name,
-                'is_open'  => $event->is_open,
+                'name' => $event->name,
+                'is_open' => $event->is_open,
                 'is_blind' => $event->is_blind,
             ],
-            'groups'       => $this->groups($event),
-            'candidates'   => $this->candidates($event),
-            'scores'       => $this->scores($judge),
+            'groups' => $this->groups($event),
+            'candidates' => $this->candidates($event),
+            'scores' => $this->scores($judge),
             'hasSignature' => ! empty($judge->signature),
-            'totalMax'     => (int) $event->criteria->whereNull('parent_id')->sum('max_score'),
+            'totalMax' => (int) $event->criteria->whereNull('parent_id')->sum('max_score'),
         ];
     }
 
@@ -44,11 +45,22 @@ class JudgePayloadService
      */
     public function scores(Judge $judge): array
     {
+        return $this->scoresByCandidate($judge)->toArray();
+    }
+
+    /**
+     * 같은 값을 Collection 으로. 개별심사표 Blade 가 ->get() 으로 꺼내 쓴다.
+     *
+     * 이 그룹핑이 심사 화면·개인 심사표·관리자 출력 세 곳에 흩어져 있었다.
+     *
+     * @return Collection<int, Collection<int, float>>
+     */
+    public function scoresByCandidate(Judge $judge): Collection
+    {
         return $judge->scores()
             ->get()
             ->groupBy('candidate_id')
-            ->map(fn ($group) => $group->pluck('score', 'criterion_id'))
-            ->toArray();
+            ->map(fn ($group) => $group->pluck('score', 'criterion_id'));
     }
 
     /**
@@ -60,10 +72,10 @@ class JudgePayloadService
         $byParent = $event->criteria->groupBy('parent_id');
 
         $mapItem = fn ($c) => [
-            'id'          => $c->id,
-            'name'        => $c->name,
+            'id' => $c->id,
+            'name' => $c->name,
             'description' => $c->description,
-            'max_score'   => (int) $c->max_score,
+            'max_score' => (int) $c->max_score,
         ];
 
         return $event->criteria->whereNull('parent_id')->values()
@@ -71,11 +83,11 @@ class JudgePayloadService
                 $children = $byParent->get($top->id, collect());
 
                 return [
-                    'id'           => $top->id,
-                    'name'         => $top->name,
-                    'max_score'    => (int) $top->max_score,
+                    'id' => $top->id,
+                    'name' => $top->name,
+                    'max_score' => (int) $top->max_score,
                     'has_children' => $children->isNotEmpty(),
-                    'items'        => ($children->isEmpty() ? collect([$top]) : $children)->map($mapItem)->values()->toArray(),
+                    'items' => ($children->isEmpty() ? collect([$top]) : $children)->map($mapItem)->values()->toArray(),
                 ];
             })->toArray();
     }
@@ -88,10 +100,10 @@ class JudgePayloadService
     {
         return $event->candidates->values()
             ->map(fn ($c, $i) => array_merge([
-                'id'     => $c->id,
+                'id' => $c->id,
                 'number' => sprintf('%02d', $i + 1),
             ], $event->is_blind ? [] : [
-                'name'        => $c->name,
+                'name' => $c->name,
                 'affiliation' => $c->affiliation,
             ]))
             ->values()->toArray();

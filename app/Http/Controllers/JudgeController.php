@@ -77,14 +77,11 @@ class JudgeController extends Controller
     }
 
     /** 인쇄용 개인 심사표 — 서명 삽입, 출력 후 자필 서명도 가능 */
-    public function print(Judge $judge): View
+    public function print(Judge $judge, JudgePayloadService $payload): View
     {
         $event = $judge->event()->with(['candidates', 'criteria'])->firstOrFail();
 
-        $myScores = $judge->scores()
-            ->get()
-            ->groupBy('candidate_id')
-            ->map(fn ($group) => $group->pluck('score', 'criterion_id'));
+        $myScores = $payload->scoresByCandidate($judge);
 
         return view('judge.print', compact('judge', 'event', 'myScores'));
     }

@@ -87,14 +87,11 @@
 
     @php
         // 2단계 평가항목: 대분류(서브항목 있으면 서브가 채점 대상, 없으면 대분류 자신)
+        // 말단 판정은 Event::leafCriteria() 가 유일한 정답이다 — 여기서 다시 구현하지 않는다.
         $tops     = $event->criteria->whereNull('parent_id')->values();
         $byParent = $event->criteria->groupBy('parent_id');
-        $leaves   = collect();
-        foreach ($tops as $top) {
-            $kids = $byParent->get($top->id, collect());
-            if ($kids->isEmpty()) { $leaves->push($top); } else { $leaves = $leaves->concat($kids); }
-        }
-        $hasSub = $tops->contains(fn ($t) => $byParent->get($t->id, collect())->isNotEmpty());
+        $leaves   = $event->leafCriteria();
+        $hasSub   = $tops->contains(fn ($t) => $byParent->get($t->id, collect())->isNotEmpty());
         $fmt = fn ($n) => rtrim(rtrim(number_format($n, 1), '0'), '.');
     @endphp
 
