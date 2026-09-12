@@ -25,6 +25,8 @@
 
     <style>
         [x-cloak] { display: none !important; }
+        /* 한국어 타이포 — 단어 중간에서 끊지 않고, 줄간격을 넉넉히 */
+        body { word-break: keep-all; line-height: 1.6; }
         /* neis.me Toolgrid 로고 (2026-08-05 로고 시스템 반영) */
         .nm-logo{display:inline-flex;align-items:center;gap:.46em;font-size:19px;text-decoration:none;font-family:'JetBrains Mono',ui-monospace,monospace}
         .nm-grid{display:grid;grid-template:1fr 1fr/1fr 1fr;gap:.18em;width:1.72em;height:1.72em;padding:.36em;box-sizing:border-box;background:#1F2933;border-radius:.18em}

@@ -18,7 +18,8 @@
         html { background: #e2e8f0; }
         body {
             font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
-            color: #111; font-size: 12px;
+            color: #111; font-size: 12px; line-height: 1.6;
+            word-break: keep-all; /* 한국어는 단어 중간에서 줄바꿈하지 않는다 */
             width: 210mm; min-height: 297mm; margin: 16px auto;
             padding: {{ $margin }};
             background: #fff; box-shadow: 0 2px 14px rgba(15, 23, 42, 0.25);
