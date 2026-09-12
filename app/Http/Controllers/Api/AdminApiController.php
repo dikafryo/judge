@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\SetupRejected;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkCandidatesRequest;
 use App\Http\Requests\BulkJudgesRequest;
@@ -118,26 +117,18 @@ class AdminApiController extends Controller
 
     public function updateReportSigners(UpdateReportSignersRequest $request): JsonResponse
     {
-        try {
-            $this->setup->updateReportSigners(
-                $this->event($request),
-                $request->showJudgeSigns(),
-                $request->signerRows(),
-            );
-        } catch (SetupRejected $e) {
-            return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
-        }
+        $this->setup->updateReportSigners(
+            $this->event($request),
+            $request->showJudgeSigns(),
+            $request->signerRows(),
+        );
 
         return $this->show($request);
     }
 
     public function destroyEvent(DestroyEventRequest $request): JsonResponse
     {
-        try {
-            $name = $this->setup->deleteEvent($this->event($request), $request->validated('confirm_name'));
-        } catch (SetupRejected $e) {
-            return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
-        }
+        $name = $this->setup->deleteEvent($this->event($request), $request->validated('confirm_name'));
 
         return response()->json([
             'message' => "'{$name}' 행사와 모든 심사 데이터가 삭제되었습니다.",
@@ -146,11 +137,7 @@ class AdminApiController extends Controller
 
     public function storeCriterion(StoreCriterionRequest $request): JsonResponse
     {
-        try {
-            $this->setup->addCriterion($this->event($request), $request->validated());
-        } catch (SetupRejected $e) {
-            return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
-        }
+        $this->setup->addCriterion($this->event($request), $request->validated());
 
         return $this->setup($request);
     }

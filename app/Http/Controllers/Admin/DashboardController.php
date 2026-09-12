@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Judge;
+use App\Services\ResultCsvExporter;
 use App\Services\ScoreAggregator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
@@ -45,36 +46,10 @@ class DashboardController extends Controller
     }
 
     /** 최종 결과 CSV 다운로드 (Excel 호환 — UTF-8 BOM) */
-    public function exportCsv(Event $event): StreamedResponse
+    /** 집계 결과 CSV 내려받기 — 엑셀에서 바로 열 수 있게 BOM 을 붙인다 */
+    public function exportCsv(Event $event, ResultCsvExporter $exporter): StreamedResponse
     {
-        $data = $this->aggregate($event);
-        $filename = preg_replace('/[\/\\\\:*?"<>|]/', '_', $event->name).'_심사결과_'.now()->format('Ymd_His').'.csv';
-
-        return response()->streamDownload(function () use ($data) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF"); // Excel 한글 인식용 BOM
-
-            $header = ['심사번호', '순위', '평가 대상', '소속'];
-            foreach ($data['judges'] as $judge) {
-                $header[] = $judge['name'];
-            }
-            array_push($header, '합계', '평균');
-            fputcsv($out, $header);
-
-            foreach ($data['rows'] as $row) {
-                $line = [$row['number'] ?? '', $row['rank'] ?? '-', $row['name'], $row['affiliation'] ?? ''];
-                foreach ($data['judges'] as $judge) {
-                    $line[] = $row['by_judge'][$judge['judge_id']] ?? '';
-                }
-                $line[] = $row['sum'];
-                $line[] = $row['avg'] ?? '';
-                fputcsv($out, $line);
-            }
-
-            fclose($out);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        return $exporter->stream($event, $this->aggregate($event));
     }
 
     /** 심사위원별 개별심사표 인쇄 (관리자용 — 코드 회수 후에도 출력 가능) */

@@ -21,7 +21,7 @@ class EventApiController extends Controller
     public function index(): JsonResponse
     {
         $events = Event::query()
-            ->where('is_demo', false)   // 체험용 샘플은 웹의 /demo 에서만 안내한다
+            ->real()
             ->withCount(['candidates', 'criteria', 'judges'])
             ->latest()
             ->limit(50)
