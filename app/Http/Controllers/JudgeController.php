@@ -8,6 +8,7 @@ use App\Http\Requests\StoreJudgeScoresRequest;
 use App\Http\Requests\StoreSignatureRequest;
 use App\Models\Candidate;
 use App\Models\Judge;
+use App\Services\EventSetup;
 use App\Services\JudgePayloadService;
 use App\Services\ScoreWriter;
 use Illuminate\Http\JsonResponse;
@@ -37,7 +38,9 @@ class JudgeController extends Controller
         $event = $judge->event()->with(['candidates', 'criteria'])->firstOrFail();
 
         // payload 조립은 서비스에 있다 — 네이티브 앱 API 가 같은 코드를 쓴다
+        // maxTotal 은 웹 화면 전용 — 앱 API 응답(같은 build())의 모양은 건드리지 않는다
         $payload = $payloads->build($judge, $event) + [
+            'maxTotal' => EventSetup::TOTAL_MAX,
             'urls' => [
                 'scores' => route('judge.scores', $judge),
                 'signature' => route('judge.signature', $judge),

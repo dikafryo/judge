@@ -57,10 +57,10 @@
         </div>
     </form>
     @if ($event->scoring_method === 'trimmed' && $event->judges->count() < 3)
-        <div class="mt-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-4 py-2.5 text-sm">
+        <x-alert class="mt-3">
             ⚠️ 현재 심사위원이 <strong>{{ $event->judges->count() }}명</strong>입니다.
-            최고·최저 제외는 <strong>대상별 채점 심사위원이 3명 이상</strong>일 때만 적용되며, 미만이면 제외 없이 전체 점수로 집계됩니다.
-        </div>
+            최고·최저 제외는 <strong>대상별 채점 심사위원이 {{ $trimmedMinJudges }}명 이상</strong>일 때만 적용되며, 미만이면 제외 없이 전체 점수로 집계됩니다.
+        </x-alert>
     @endif
 </section>
 

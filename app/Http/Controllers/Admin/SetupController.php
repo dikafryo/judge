@@ -16,6 +16,7 @@ use App\Models\Criterion;
 use App\Models\Event;
 use App\Models\Judge;
 use App\Services\EventSetup;
+use App\Services\ScoreAggregator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -32,7 +33,9 @@ class SetupController extends Controller
     {
         $event->load('judges');
 
-        return view('admin.setup', compact('event'));
+        $trimmedMinJudges = ScoreAggregator::TRIMMED_MIN_JUDGES;
+
+        return view('admin.setup', compact('event', 'trimmedMinJudges'));
     }
 
     /** 평가 항목 관리 화면 — 1·2레벨 항목 구성, 배점 합계 100점 필수 */
