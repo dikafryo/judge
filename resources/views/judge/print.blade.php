@@ -1,20 +1,6 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ $event->name }} 개별심사표 — {{ $judge->name }}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        /* 화면 미리보기 = 실제 A4 용지와 동일한 폭·여백 */
-        html { background: #e2e8f0; }
-        body {
-            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
-            color: #111; font-size: 12px;
-            width: 210mm; min-height: 297mm; margin: 16px auto;
-            padding: 15mm 18mm;
-            background: #fff; box-shadow: 0 2px 14px rgba(15, 23, 42, 0.25);
-        }
-        h1 { text-align: center; font-size: 22px; margin-bottom: 14px; }
+<x-print-page :title="$event->name . ' 개별심사표 — ' . $judge->name" margin="15mm 18mm">
+    <x-slot:styles>
+        h1 { margin-bottom: 14px; }
 
         /* 제목 아래: 좌측 메타, 우측 심사위원 서명란 */
         .meta-row {
@@ -56,15 +42,8 @@
             background: #4f46e5; color: #fff; border: 0; border-radius: 8px;
             padding: 10px 28px; font-size: 14px; cursor: pointer;
         }
-        @media print {
-            .toolbar { display: none; }
-            html { background: none; }
-            body { width: auto; min-height: 0; margin: 0; padding: 0 6mm; box-shadow: none; } /* 좌우 여백 보강 */
-            @page { size: A4 portrait; margin: 15mm 18mm; }
-        }
-    </style>
-</head>
-<body>
+    </x-slot:styles>
+
     <div class="toolbar"><button onclick="window.print()">🖨️ 인쇄하기</button></div>
 
     <h1>{{ $event->name }} 개별심사표</h1>
@@ -158,5 +137,4 @@
         위와 같이 공정하게 심사하였음을 확인합니다.
         <div class="date">{{ now()->format('Y년 m월 d일') }}</div>
     </div>
-</body>
-</html>
+</x-print-page>
