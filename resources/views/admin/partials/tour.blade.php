@@ -5,11 +5,12 @@
      · 진행 카드: 하단 고정(z-30 — nav z-40·설명서 모달 z-50보다 아래), 서버 상태로 현재 단계 판정
      · localStorage: judgeHelperClosed:{id}(행사별, 완료 후 닫음) 하나만 사용 — 미완 상태에는 어떤 플래그도 안 먹는다 --}}
 @php
-    $tourTotalMax   = $event->totalMaxScore();
+    // nav 가 이미 구한 값을 그대로 쓴다. 각각 쿼리라 다시 부르면 화면당 두 번이 된다.
+    $tourTotalMax   = $totalMax ?? $event->totalMaxScore();
     $tourCandidates = $candidateCount ?? $event->candidates()->count();
     $tourJudges     = $judgeCount ?? $event->judges()->count();
 
-    $tourStep1Done = $tourTotalMax === 100;
+    $tourStep1Done = $tourTotalMax === ($maxTotal ?? \App\Services\EventSetup::TOTAL_MAX);
     $tourStep2Done = $tourCandidates > 0;
     $tourStep3Done = $tourJudges > 0;
 

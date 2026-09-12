@@ -81,6 +81,29 @@ class AdminApiTest extends TestCase
         $this->assertStringContainsString('/judge/', $response->json('judges.0.entry_url'));
     }
 
+    public function test_설정_응답은_채점_여부를_항목마다_알려준다(): void
+    {
+        $event = Event::factory()->create();
+        $scored = Criterion::factory()->for($event)->create(['max_score' => 50]);
+        $untouched = Criterion::factory()->for($event)->create(['max_score' => 50]);
+
+        $candidate = Candidate::factory()->for($event)->create();
+        $judge = Judge::factory()->for($event)->create();
+        $judge->scores()->create([
+            'candidate_id' => $candidate->id,
+            'criterion_id' => $scored->id,
+            'score' => 10,
+        ]);
+
+        $criteria = collect(
+            $this->getJson('/api/v1/admin/setup', $this->admin($event))->assertOk()->json('criteria')
+        )->keyBy('id');
+
+        // 앱은 이 값으로 '수정 불가' 항목을 잠근다
+        $this->assertTrue($criteria[$scored->id]['has_scores']);
+        $this->assertFalse($criteria[$untouched->id]['has_scores']);
+    }
+
     public function test_평가_대상을_쉼표_형식으로_일괄_등록한다(): void
     {
         $event = Event::factory()->create();

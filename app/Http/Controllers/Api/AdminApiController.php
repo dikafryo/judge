@@ -68,14 +68,15 @@ class AdminApiController extends Controller
         $event = $this->event($request);
 
         return response()->json([
-            'criteria' => $event->criteria()->get()
+            // withExists: 항목마다 EXISTS 쿼리를 따로 던지지 않도록 한 번에 가져온다
+            'criteria' => $event->criteria()->withExists('scores')->get()
                 ->map(fn (Criterion $c) => [
                     'id' => $c->id,
                     'name' => $c->name,
                     'description' => $c->description,
                     'max_score' => (int) $c->max_score,
                     'parent_id' => $c->parent_id,
-                    'has_scores' => $c->scores()->exists(),
+                    'has_scores' => (bool) $c->scores_exists,
                 ])->values(),
             'candidates' => $event->candidates()->get()
                 ->map(fn (Candidate $c) => [
