@@ -9,6 +9,7 @@ use App\Models\Candidate;
 use App\Models\Criterion;
 use App\Models\Event;
 use App\Models\Judge;
+use Illuminate\Support\Facades\DB;
 
 /**
  * 행사 설정 변경 규칙.
@@ -37,9 +38,9 @@ class EventSetup
             [$name, $affiliation] = array_pad(array_map('trim', preg_split('/[,|\t]/', $line, 2)), 2, null);
 
             $added[] = $event->candidates()->create([
-                'name'        => mb_substr($name, 0, 100),
+                'name' => mb_substr($name, 0, 100),
                 'affiliation' => $affiliation !== null && $affiliation !== '' ? mb_substr($affiliation, 0, 100) : null,
-                'sort_order'  => ++$order,
+                'sort_order' => ++$order,
             ]);
         }
 
@@ -95,7 +96,7 @@ class EventSetup
             if ($used + $data['max_score'] > $parent->max_score) {
                 throw new SetupRejected(
                     "'{$parent->name}' 2레벨 배점 합계가 1레벨 배점 {$parent->max_score}점을 초과합니다. "
-                        . "(현재 {$used}점, 추가 가능 " . ($parent->max_score - $used) . '점)',
+                        ."(현재 {$used}점, 추가 가능 ".($parent->max_score - $used).'점)',
                     'max_score',
                 );
             }
@@ -104,19 +105,19 @@ class EventSetup
 
             if ($used + $data['max_score'] > self::TOTAL_MAX) {
                 throw new SetupRejected(
-                    '1레벨 배점 합계가 ' . self::TOTAL_MAX . "점을 초과합니다. (현재 {$used}점, 추가 가능 "
-                        . (self::TOTAL_MAX - $used) . '점)',
+                    '1레벨 배점 합계가 '.self::TOTAL_MAX."점을 초과합니다. (현재 {$used}점, 추가 가능 "
+                        .(self::TOTAL_MAX - $used).'점)',
                     'max_score',
                 );
             }
         }
 
         return $event->criteria()->create([
-            'name'        => $data['name'],
+            'name' => $data['name'],
             'description' => $data['description'] ?? null,
-            'max_score'   => $data['max_score'],
-            'parent_id'   => $parentId,
-            'sort_order'  => (int) $event->criteria()->max('sort_order') + 1,
+            'max_score' => $data['max_score'],
+            'parent_id' => $parentId,
+            'sort_order' => (int) $event->criteria()->max('sort_order') + 1,
         ]);
     }
 
@@ -153,9 +154,76 @@ class EventSetup
     {
         $event->update([
             'scoring_method' => $data['scoring_method'],
-            'is_blind'       => $data['is_blind'],
-            'pass_count'     => $data['pass_count'] ?? null,
+            'is_blind' => $data['is_blind'],
+            'pass_count' => $data['pass_count'] ?? null,
         ]);
+    }
+
+    /**
+     * 최종집계표 서명 방식과 결재란을 저장한다.
+     *
+     * @param  list<array{role: string, dept?: string|null, position?: string|null, name?: string|null}>  $rows
+     * @return list<array{role: string, dept: string, position: string, name: string}>
+     *
+     * @throws SetupRejected
+     */
+    public function updateReportSigners(Event $event, bool $showJudgeSigns, array $rows): array
+    {
+        $signers = $this->normalizeReportSigners($rows);
+
+        if (! $showJudgeSigns && ! in_array('기록자', array_column($signers, 'role'), true)) {
+            throw new SetupRejected(
+                '심사위원 서명란을 생략하려면 결재란이 필수입니다 — 최소한 기록자 이름을 입력하세요.',
+                'signers',
+            );
+        }
+
+        $event->update([
+            'show_judge_signs' => $showJudgeSigns,
+            'report_signers' => $signers ?: null,
+        ]);
+
+        return $signers;
+    }
+
+    /**
+     * @param  list<array{role: string, dept?: string|null, position?: string|null, name?: string|null}>  $rows
+     * @return list<array{role: string, dept: string, position: string, name: string}>
+     */
+    private function normalizeReportSigners(array $rows): array
+    {
+        $byRole = collect($rows)->keyBy('role');
+        $signers = [];
+
+        foreach (['기록자', '검토자', '확인자'] as $role) {
+            $row = $byRole->get($role, []);
+            $name = trim((string) ($row['name'] ?? ''));
+
+            if ($name !== '') {
+                $signers[] = [
+                    'role' => $role,
+                    'dept' => trim((string) ($row['dept'] ?? '')),
+                    'position' => trim((string) ($row['position'] ?? '')),
+                    'name' => $name,
+                ];
+            }
+        }
+
+        return $signers;
+    }
+
+    /** 행사와 종속 데이터 및 앱 인증 토큰을 삭제한다. */
+    public function deleteEvent(Event $event): string
+    {
+        $name = $event->name;
+
+        DB::transaction(function () use ($event): void {
+            $event->judges()->get()->each(fn (Judge $judge) => $judge->tokens()->delete());
+            $event->tokens()->delete();
+            $event->delete();
+        });
+
+        return $name;
     }
 
     /** @return list<string> 빈 줄을 걸러낸 각 줄 */

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\EventApiController;
 use App\Http\Controllers\Api\JudgeApiController;
@@ -53,6 +55,10 @@ Route::prefix('v1')->group(function () {
             // 재개는 마감 상태에서도 돼야 한다. 체험용 행사는 어느 쪽이든 막힌다.
             Route::post('/toggle-open', [AdminApiController::class, 'toggleOpen'])
                 ->middleware('api.writable:closed-ok')->name('api.admin.toggle-open');
+            Route::put('/report-signers', [AdminApiController::class, 'updateReportSigners'])
+                ->middleware('api.writable:closed-ok')->name('api.admin.report-signers');
+            Route::delete('/event', [AdminApiController::class, 'destroyEvent'])
+                ->middleware('api.writable:closed-ok')->name('api.admin.event.destroy');
 
             // 설정 변경은 마감되면 막힌다 — 웹(event.open)과 같은 규칙이다.
             Route::middleware('api.writable')->group(function () {

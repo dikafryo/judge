@@ -24,9 +24,7 @@ use Illuminate\Support\Facades\URL;
  */
 class AdminApiController extends Controller
 {
-    public function __construct(private readonly EventSetup $setup)
-    {
-    }
+    public function __construct(private readonly EventSetup $setup) {}
 
     private function event(Request $request): Event
     {
@@ -41,17 +39,18 @@ class AdminApiController extends Controller
         $event = $this->event($request);
 
         return response()->json([
-            'id'               => $event->id,
-            'name'             => $event->name,
-            'description'      => $event->description,
-            'event_date'       => $event->event_date?->toDateString(),
-            'is_open'          => $event->is_open,
-            'is_demo'          => $event->is_demo,
-            'is_blind'         => $event->is_blind,
-            'scoring_method'   => $event->scoring_method,
-            'scoring_note'     => $event->scoringMethodNote(),
-            'pass_count'       => $event->pass_count,
+            'id' => $event->id,
+            'name' => $event->name,
+            'description' => $event->description,
+            'event_date' => $event->event_date?->toDateString(),
+            'is_open' => $event->is_open,
+            'is_demo' => $event->is_demo,
+            'is_blind' => $event->is_blind,
+            'scoring_method' => $event->scoring_method,
+            'scoring_note' => $event->scoringMethodNote(),
+            'pass_count' => $event->pass_count,
             'show_judge_signs' => $event->show_judge_signs,
+            'report_signers' => $event->report_signers ?? [],
         ]);
     }
 
@@ -64,31 +63,31 @@ class AdminApiController extends Controller
         $event = $this->event($request);
 
         return response()->json([
-            'criteria'   => $event->criteria()->get()
+            'criteria' => $event->criteria()->get()
                 ->map(fn (Criterion $c) => [
-                    'id'          => $c->id,
-                    'name'        => $c->name,
+                    'id' => $c->id,
+                    'name' => $c->name,
                     'description' => $c->description,
-                    'max_score'   => (int) $c->max_score,
-                    'parent_id'   => $c->parent_id,
-                    'has_scores'  => $c->scores()->exists(),
+                    'max_score' => (int) $c->max_score,
+                    'parent_id' => $c->parent_id,
+                    'has_scores' => $c->scores()->exists(),
                 ])->values(),
             'candidates' => $event->candidates()->get()
                 ->map(fn (Candidate $c) => [
-                    'id'          => $c->id,
-                    'name'        => $c->name,
+                    'id' => $c->id,
+                    'name' => $c->name,
                     'affiliation' => $c->affiliation,
                 ])->values(),
-            'judges'     => $event->judges()->get()
+            'judges' => $event->judges()->get()
                 ->map(fn (Judge $j) => [
-                    'id'        => $j->id,
-                    'name'      => $j->name,
-                    'code'      => $j->code,
+                    'id' => $j->id,
+                    'name' => $j->name,
+                    'code' => $j->code,
                     'signed_at' => $j->signed_at?->toIso8601String(),
                     // 앱이 심사위원 카드를 화면에 띄워 바로 보여줄 수 있게 한다(인쇄 없이 배포).
                     'entry_url' => $j->code ? route('judge.show', $j) : null,
                 ])->values(),
-            'total_max'  => (int) $event->topCriteria()->sum('max_score'),
+            'total_max' => (int) $event->topCriteria()->sum('max_score'),
         ]);
     }
 
@@ -97,8 +96,8 @@ class AdminApiController extends Controller
     {
         $data = $request->validate([
             'scoring_method' => ['required', 'in:all,trimmed'],
-            'is_blind'       => ['required', 'boolean'],
-            'pass_count'     => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'is_blind' => ['required', 'boolean'],
+            'pass_count' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ]);
 
         $this->setup->updateScoringMethod($this->event($request), $data);
@@ -117,13 +116,56 @@ class AdminApiController extends Controller
         ]);
     }
 
+    public function updateReportSigners(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'show_judge_signs' => ['required', 'boolean'],
+            'signers' => ['nullable', 'array'],
+            'signers.*.role' => ['required', 'string', 'in:기록자,검토자,확인자'],
+            'signers.*.dept' => ['nullable', 'string', 'max:50'],
+            'signers.*.position' => ['nullable', 'string', 'max:50'],
+            'signers.*.name' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        try {
+            $this->setup->updateReportSigners(
+                $this->event($request),
+                (bool) $data['show_judge_signs'],
+                $data['signers'] ?? [],
+            );
+        } catch (SetupRejected $e) {
+            return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+        }
+
+        return $this->show($request);
+    }
+
+    public function destroyEvent(Request $request): JsonResponse
+    {
+        $data = $request->validate(['confirm_name' => ['required', 'string']]);
+        $event = $this->event($request);
+
+        if (trim($data['confirm_name']) !== $event->name) {
+            return response()->json([
+                'message' => '행사명이 일치하지 않아 삭제가 취소되었습니다.',
+                'errors' => ['confirm_name' => ['행사명이 일치하지 않습니다.']],
+            ], 422);
+        }
+
+        $name = $this->setup->deleteEvent($event);
+
+        return response()->json([
+            'message' => "'{$name}' 행사와 모든 심사 데이터가 삭제되었습니다.",
+        ]);
+    }
+
     public function storeCriterion(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'        => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:500'],
-            'max_score'   => ['required', 'integer', 'min:1', 'max:100'],
-            'parent_id'   => ['nullable', 'integer'],
+            'max_score' => ['required', 'integer', 'min:1', 'max:100'],
+            'parent_id' => ['nullable', 'integer'],
         ]);
 
         try {
@@ -201,13 +243,13 @@ class AdminApiController extends Controller
         ]);
 
         $route = match ($data['kind']) {
-            'report'      => 'admin.print',
-            'csv'         => 'admin.export',
+            'report' => 'admin.print',
+            'csv' => 'admin.export',
             'judge-cards' => 'admin.judges.print',
         };
 
         return response()->json([
-            'url'        => URL::temporarySignedRoute($route, now()->addMinutes(10), $event),
+            'url' => URL::temporarySignedRoute($route, now()->addMinutes(10), $event),
             'expires_in' => 600,
         ]);
     }

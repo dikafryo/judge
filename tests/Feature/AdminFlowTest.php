@@ -98,4 +98,46 @@ class AdminFlowTest extends TestCase
             ->postJson(route('admin.toggle-open', $event))
             ->assertStatus(423);
     }
+
+    public function test_기본설정_최종집계표_서명란을_저장한다(): void
+    {
+        // 웹 폼은 show_judge_signs 를 문자열 '0'/'1' 로 보낸다.
+        // strict_types 환경에서 bool 타입힌트에 문자열을 넘기면 500 이 난다 — 그 경로를 고정한다.
+        $event = Event::factory()->closed()->create();
+
+        $this->actingAsAdmin($event)
+            ->post(route('admin.report-signers', $event), [
+                'show_judge_signs' => '0',
+                'signers' => [
+                    '기록자' => ['dept' => '총무과', 'position' => '주무관', 'name' => '김기록'],
+                    '검토자' => ['dept' => '', 'position' => '', 'name' => ''],
+                    '확인자' => ['dept' => '', 'position' => '', 'name' => ''],
+                ],
+            ])
+            ->assertSessionHas('status');
+
+        $event->refresh();
+
+        $this->assertFalse($event->show_judge_signs);
+        $this->assertSame('김기록', $event->report_signers[0]['name']);
+        $this->assertCount(1, $event->report_signers, '이름이 비어 있는 역할은 결재란에서 빠진다');
+    }
+
+    public function test_기본설정_최종집계표_서명란을_포함으로_저장한다(): void
+    {
+        $event = Event::factory()->closed()->create();
+
+        $this->actingAsAdmin($event)
+            ->post(route('admin.report-signers', $event), [
+                'show_judge_signs' => '1',
+                'signers' => [
+                    '기록자' => ['dept' => '', 'position' => '', 'name' => ''],
+                    '검토자' => ['dept' => '', 'position' => '', 'name' => ''],
+                    '확인자' => ['dept' => '', 'position' => '', 'name' => ''],
+                ],
+            ])
+            ->assertSessionHas('status');
+
+        $this->assertTrue($event->fresh()->show_judge_signs);
+    }
 }
