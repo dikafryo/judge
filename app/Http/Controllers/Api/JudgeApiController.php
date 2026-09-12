@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ScoreRejected;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreScoresRequest;
+use App\Http\Requests\StoreSignatureRequest;
 use App\Models\Candidate;
 use App\Models\Judge;
 use App\Services\JudgePayloadService;
@@ -51,7 +53,7 @@ class JudgeApiController extends Controller
      * 말단 항목 전부를 실어 보낸다. 이렇게 하면 'null 은 삭제' 규칙이 모호해지지 않고,
      * 오프라인 큐가 재전송해도 결과가 같다.
      */
-    public function storeScores(Request $request, Candidate $candidate, ScoreWriter $writer): JsonResponse
+    public function storeScores(StoreScoresRequest $request, Candidate $candidate, ScoreWriter $writer): JsonResponse
     {
         $judge = $this->judge($request);
         $event = $judge->event;
@@ -64,27 +66,18 @@ class JudgeApiController extends Controller
             return response()->json(['message' => '이 행사의 평가 대상이 아닙니다.'], 404);
         }
 
-        $data = $request->validate([
-            'scores' => ['required', 'array', 'min:1'],
-            'scores.*' => ['nullable', 'numeric', 'min:0'],
-        ]);
-
         try {
-            return response()->json($writer->save($judge, $candidate, $data['scores']));
+            return response()->json($writer->save($judge, $candidate, $request->validated('scores')));
         } catch (ScoreRejected $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     /** 전자서명 (PNG dataURL) */
-    public function storeSignature(Request $request): JsonResponse
+    public function storeSignature(StoreSignatureRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'signature' => ['required', 'string', 'starts_with:data:image/png;base64,', 'max:200000'],
-        ]);
-
         $judge = $this->judge($request);
-        $judge->update(['signature' => $data['signature'], 'signed_at' => now()]);
+        $judge->update(['signature' => $request->validated('signature'), 'signed_at' => now()]);
 
         return response()->json([
             'message' => '서명이 저장되었습니다.',

@@ -10,6 +10,7 @@ use App\Models\Criterion;
 use App\Models\Event;
 use App\Models\Judge;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * 행사 설정 변경 규칙.
@@ -22,6 +23,24 @@ class EventSetup
 {
     /** 1레벨 항목 배점 합계 상한. 최종 점수를 100점 만점으로 읽기 위한 전제다. */
     public const TOTAL_MAX = 100;
+
+    /** 최종집계표 결재란 역할 — 이 순서대로 출력된다 */
+    public const SIGNER_ROLES = ['기록자', '검토자', '확인자'];
+
+    /**
+     * 행사 생성. 회원가입이 없어 관리 비밀번호가 유일한 열쇠다 — 반드시 해시해서 저장한다.
+     *
+     * @param  array{name: string, description?: string|null, event_date?: string|null, admin_password: string}  $data
+     */
+    public function createEvent(array $data): Event
+    {
+        return Event::create([
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'event_date' => $data['event_date'] ?? null,
+            'admin_password' => Hash::make($data['admin_password']),
+        ]);
+    }
 
     /**
      * 평가 대상 일괄 등록 — 한 줄에 하나, "이름, 소속" 형식.
@@ -171,7 +190,7 @@ class EventSetup
     {
         $signers = $this->normalizeReportSigners($rows);
 
-        if (! $showJudgeSigns && ! in_array('기록자', array_column($signers, 'role'), true)) {
+        if (! $showJudgeSigns && ! in_array(self::SIGNER_ROLES[0], array_column($signers, 'role'), true)) {
             throw new SetupRejected(
                 '심사위원 서명란을 생략하려면 결재란이 필수입니다 — 최소한 기록자 이름을 입력하세요.',
                 'signers',
@@ -195,7 +214,7 @@ class EventSetup
         $byRole = collect($rows)->keyBy('role');
         $signers = [];
 
-        foreach (['기록자', '검토자', '확인자'] as $role) {
+        foreach (self::SIGNER_ROLES as $role) {
             $row = $byRole->get($role, []);
             $name = trim((string) ($row['name'] ?? ''));
 
@@ -212,10 +231,21 @@ class EventSetup
         return $signers;
     }
 
-    /** 행사와 종속 데이터 및 앱 인증 토큰을 삭제한다. */
-    public function deleteEvent(Event $event): string
+    /**
+     * 행사와 종속 데이터 및 앱 인증 토큰을 삭제한다.
+     *
+     * 되돌릴 수 없으므로 행사명을 그대로 다시 입력해야 지운다.
+     * 이 확인은 도메인 규칙이라 웹·앱 양쪽이 여기 한 곳을 거친다.
+     *
+     * @throws SetupRejected 행사명이 일치하지 않을 때
+     */
+    public function deleteEvent(Event $event, string $confirmName): string
     {
         $name = $event->name;
+
+        if (trim($confirmName) !== $name) {
+            throw new SetupRejected('행사명이 일치하지 않아 삭제가 취소되었습니다.', 'confirm_name');
+        }
 
         DB::transaction(function () use ($event): void {
             $event->judges()->get()->each(fn (Judge $judge) => $judge->tokens()->delete());

@@ -30,7 +30,7 @@ class EnsureEventAdmin
             return $next($request);
         }
 
-        if (! $request->session()->get('event_admin_' . $event->id, false)) {
+        if (! $request->session()->get($event->adminSessionKey(), false)) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => '관리자 인증이 필요합니다.'], 401);
             }

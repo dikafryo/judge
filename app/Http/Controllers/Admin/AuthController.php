@@ -26,14 +26,14 @@ class AuthController extends Controller
             return back()->withErrors(['password' => '비밀번호가 올바르지 않습니다.']);
         }
 
-        $request->session()->put('event_admin_' . $event->id, true);
+        $request->session()->put($event->adminSessionKey(), true);
 
         return redirect()->route('admin.dashboard', $event);
     }
 
     public function logout(Request $request, Event $event): RedirectResponse
     {
-        $request->session()->forget('event_admin_' . $event->id);
+        $request->session()->forget($event->adminSessionKey());
 
         return redirect()->route('home');
     }

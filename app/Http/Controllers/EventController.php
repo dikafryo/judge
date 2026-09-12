@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreEventRequest;
 use App\Models\Event;
+use App\Services\EventSetup;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class EventController extends Controller
@@ -29,27 +29,12 @@ class EventController extends Controller
     }
 
     /** 행사 생성 — 비밀번호만으로 관리 (별도 로그인 모듈 없음) */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreEventRequest $request, EventSetup $setup): RedirectResponse
     {
-        $data = $request->validate([
-            'name'           => ['required', 'string', 'max:100'],
-            'description'    => ['nullable', 'string', 'max:2000'],
-            'event_date'     => ['nullable', 'date'],
-            'admin_password' => ['required', 'string', 'min:4', 'max:50'],
-        ], [], [
-            'name'           => '행사명',
-            'admin_password' => '관리 비밀번호',
-        ]);
-
-        $event = Event::create([
-            'name'           => $data['name'],
-            'description'    => $data['description'] ?? null,
-            'event_date'     => $data['event_date'] ?? null,
-            'admin_password' => Hash::make($data['admin_password']),
-        ]);
+        $event = $setup->createEvent($request->validated());
 
         // 생성 직후 해당 행사의 관리자 세션 부여 → 바로 설정 화면으로
-        $request->session()->put('event_admin_' . $event->id, true);
+        $request->session()->put($event->adminSessionKey(), true);
 
         return redirect()
             ->route('admin.setup', $event)

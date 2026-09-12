@@ -12,6 +12,9 @@ use Laravel\Sanctum\HasApiTokens;
 
 class Event extends Model implements AuthenticatableContract
 {
+    /** 집계 방식 — all: 전체 평균 / trimmed: 최고·최저 심사위원 제외 */
+    public const SCORING_METHODS = ['all', 'trimmed'];
+
     // 관리자는 행사 비밀번호를 토큰으로 교환해 앱에서 쓴다
     // Sanctum 토큰의 주체가 되려면 Authenticatable 이어야 한다.
     // 없으면 인증된 요청이 throttle 미들웨어를 지날 때 getAuthIdentifier() 로 500 이 난다.
@@ -100,6 +103,15 @@ class Event extends Model implements AuthenticatableContract
     public function judges(): HasMany
     {
         return $this->hasMany(Judge::class)->orderBy('id');
+    }
+
+    /**
+     * 관리자 세션 키. 회원 개념이 없어 "이 행사의 관리자로 인증됨"을 세션에 행사별로 담는다.
+     * 로그인·행사 생성·체험 진입·삭제 후 정리가 모두 같은 키를 써야 한다.
+     */
+    public function adminSessionKey(): string
+    {
+        return 'event_admin_'.$this->id;
     }
 
     /** 평가 항목 배점 합계(대분류 기준) — 100이어야 정상 운영 가능 */

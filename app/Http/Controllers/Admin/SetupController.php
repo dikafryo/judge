@@ -6,13 +6,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exceptions\SetupRejected;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BulkCandidatesRequest;
+use App\Http\Requests\BulkJudgesRequest;
+use App\Http\Requests\DestroyEventRequest;
+use App\Http\Requests\StoreCriterionRequest;
+use App\Http\Requests\UpdateReportSignersRequest;
+use App\Http\Requests\UpdateScoringMethodRequest;
 use App\Models\Candidate;
 use App\Models\Criterion;
 use App\Models\Event;
 use App\Models\Judge;
 use App\Services\EventSetup;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -60,11 +65,9 @@ class SetupController extends Controller
     }
 
     /** 평가 대상 일괄 등록 — 한 줄에 하나, "이름, 소속" 형식. 쉼표 외에 파이프(|)·탭 구분자도 받는다. */
-    public function storeCandidates(Request $request, Event $event): RedirectResponse
+    public function storeCandidates(BulkCandidatesRequest $request, Event $event): RedirectResponse
     {
-        $request->validate(['bulk' => ['required', 'string', 'max:10000']], [], ['bulk' => '평가 대상']);
-
-        $added = count($this->setup->importCandidates($event, $request->input('bulk')));
+        $added = count($this->setup->importCandidates($event, $request->validated('bulk')));
 
         return back()->with('status', "평가 대상 {$added}건이 등록되었습니다.");
     }
@@ -80,14 +83,9 @@ class SetupController extends Controller
     /**
      * 평가 항목 등록. 배점 규칙은 EventSetup 에 있다.
      */
-    public function storeCriterion(Request $request, Event $event): RedirectResponse
+    public function storeCriterion(StoreCriterionRequest $request, Event $event): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'description' => ['nullable', 'string', 'max:500'],
-            'max_score' => ['required', 'integer', 'min:1', 'max:100'],
-            'parent_id' => ['nullable', 'integer'],
-        ], [], ['name' => '항목명', 'max_score' => '배점', 'parent_id' => '1레벨 항목']);
+        $data = $request->validated();
 
         try {
             $this->setup->addCriterion($event, $data);
@@ -107,11 +105,9 @@ class SetupController extends Controller
     }
 
     /** 심사위원 일괄 등록 — 한 줄에 한 명, 고유 코드 자동 발급 */
-    public function storeJudges(Request $request, Event $event): RedirectResponse
+    public function storeJudges(BulkJudgesRequest $request, Event $event): RedirectResponse
     {
-        $request->validate(['bulk' => ['required', 'string', 'max:5000']], [], ['bulk' => '심사위원']);
-
-        $added = count($this->setup->importJudges($event, $request->input('bulk')));
+        $added = count($this->setup->importJudges($event, $request->validated('bulk')));
 
         return back()->with('status', "심사위원 {$added}명이 등록되었습니다. 접속 링크를 각 심사위원에게 전달하세요.");
     }
@@ -139,13 +135,9 @@ class SetupController extends Controller
     }
 
     /** 집계 방식 변경 — all: 전체 합계·평균 / trimmed: 항목별 최고·최저 제외 + 심사위원 화면 노출 + 선정자(선정기관) 수 */
-    public function updateScoringMethod(Request $request, Event $event): RedirectResponse
+    public function updateScoringMethod(UpdateScoringMethodRequest $request, Event $event): RedirectResponse
     {
-        $data = $request->validate([
-            'scoring_method' => ['required', 'in:all,trimmed'],
-            'is_blind' => ['required', 'boolean'],
-            'pass_count' => ['nullable', 'integer', 'min:1', 'max:1000'],
-        ], [], ['scoring_method' => '집계 방식', 'is_blind' => '심사위원 화면', 'pass_count' => '선정자 수']);
+        $data = $request->validated();
 
         $this->setup->updateScoringMethod($event, $data);
 
@@ -169,24 +161,14 @@ class SetupController extends Controller
      * 심사위원 서명란을 포함하면 결재란은 선택, 생략하면 결재란(최소 기록자)이 필수.
      * 결재란은 이름을 입력한 사람만 출력물에 표시된다 (예: 기록자·확인자 2명만).
      */
-    public function updateReportSigners(Request $request, Event $event): RedirectResponse
+    public function updateReportSigners(UpdateReportSignersRequest $request, Event $event): RedirectResponse
     {
-        $data = $request->validate([
-            'show_judge_signs' => ['required', 'boolean'],
-            'signers' => ['nullable', 'array'],
-            'signers.*.dept' => ['nullable', 'string', 'max:50'],
-            'signers.*.position' => ['nullable', 'string', 'max:50'],
-            'signers.*.name' => ['nullable', 'string', 'max:50'],
-        ], [], ['show_judge_signs' => '심사위원 서명란', 'signers.*.dept' => '부서', 'signers.*.position' => '직급', 'signers.*.name' => '이름']);
-
-        $rows = collect($data['signers'] ?? [])
-            ->map(fn (array $row, string $role): array => ['role' => $role, ...$row])
-            ->values()
-            ->all();
-
         try {
-            // 웹 폼은 '0'/'1' 문자열로 보낸다 — bool 타입힌트에 그대로 넘기면 strict_types 에서 500 이 난다.
-            $signers = $this->setup->updateReportSigners($event, (bool) $data['show_judge_signs'], $rows);
+            $signers = $this->setup->updateReportSigners(
+                $event,
+                $request->showJudgeSigns(),
+                $request->signerRows(),
+            );
         } catch (SetupRejected $e) {
             return back()->withErrors([
                 'signers' => $e->getMessage(),
@@ -205,21 +187,15 @@ class SetupController extends Controller
     }
 
     /** 행사 삭제 — 행사명 재입력으로 확인, 대상·항목·심사위원·점수 전체 cascade 삭제 */
-    public function destroyEvent(Request $request, Event $event): RedirectResponse
+    public function destroyEvent(DestroyEventRequest $request, Event $event): RedirectResponse
     {
-        $request->validate([
-            'confirm_name' => ['required', 'string'],
-        ], [], ['confirm_name' => '행사명']);
-
-        if (trim($request->input('confirm_name')) !== $event->name) {
-            return back()->withErrors([
-                'confirm_name' => '행사명이 일치하지 않아 삭제가 취소되었습니다.',
-            ]);
+        try {
+            $name = $this->setup->deleteEvent($event, $request->validated('confirm_name'));
+        } catch (SetupRejected $e) {
+            return back()->withErrors($e->errors());
         }
 
-        $name = $this->setup->deleteEvent($event);
-
-        $request->session()->forget('event_admin_'.$event->id);
+        $request->session()->forget($event->adminSessionKey());
 
         return redirect()->route('home')->with('status', "'{$name}' 행사와 모든 심사 데이터가 삭제되었습니다.");
     }
