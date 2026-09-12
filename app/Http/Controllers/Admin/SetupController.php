@@ -17,6 +17,7 @@ use App\Models\Event;
 use App\Models\Judge;
 use App\Services\EventSetup;
 use App\Services\ScoreAggregator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -134,12 +135,26 @@ class SetupController extends Controller
     }
 
     /** 집계 방식 변경 — all: 전체 합계·평균 / trimmed: 항목별 최고·최저 제외 + 심사위원 화면 노출 + 선정자(선정기관) 수 */
-    public function updateScoringMethod(UpdateScoringMethodRequest $request, Event $event): RedirectResponse
+    public function updateScoringMethod(UpdateScoringMethodRequest $request, Event $event): RedirectResponse|JsonResponse
     {
-        $data = $request->validated();
+        $this->setup->updateScoringMethod($event, $request->validated());
 
-        $this->setup->updateScoringMethod($event, $data);
+        // 화면에서는 라디오를 누를 때마다 fetch 로 저장한다 — 리로드 없이 인라인으로 알린다.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => '저장되었습니다.',
+                'scoring_method' => $event->scoring_method,
+                'is_blind' => $event->is_blind,
+                'pass_count' => $event->pass_count,
+            ]);
+        }
 
+        return back()->with('status', $this->scoringMethodStatus($event));
+    }
+
+    /** 저장 후 안내 문구 — 무엇이 어떻게 바뀌었는지 한 문장으로 풀어 준다 */
+    private function scoringMethodStatus(Event $event): string
+    {
         $method = $event->scoring_method === 'trimmed'
             ? '집계 방식이 "평가대상별 최고·최저 총점 심사위원 제외"로 변경되었습니다.'
             : '집계 방식이 "전체 합계·평균"으로 변경되었습니다.';
@@ -152,7 +167,7 @@ class SetupController extends Controller
             ? " 선정자(선정기관) 수: {$event->pass_count}곳 — 집계 화면에 상위 {$event->pass_count}곳이 선정으로 표시됩니다."
             : ' 선정자 수는 미지정입니다.';
 
-        return back()->with('status', $method.$blind.$pass);
+        return $method.$blind.$pass;
     }
 
     /**

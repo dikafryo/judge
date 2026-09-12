@@ -99,6 +99,31 @@ class AdminFlowTest extends TestCase
             ->assertStatus(423);
     }
 
+    public function test_집계_방식은_화면에서_리로드_없이_저장된다(): void
+    {
+        // 기본설정 화면은 라디오를 누를 때마다 fetch 로 저장한다 — 리다이렉트가 아니라 JSON 이어야 한다.
+        $event = Event::factory()->create(['scoring_method' => 'all', 'is_blind' => true]);
+
+        $this->actingAsAdmin($event)
+            ->postJson(route('admin.scoring-method', $event), [
+                'scoring_method' => 'trimmed',
+                'is_blind' => false,
+                'pass_count' => 3,
+            ])
+            ->assertOk()
+            ->assertJson([
+                'message' => '저장되었습니다.',
+                'scoring_method' => 'trimmed',
+                'is_blind' => false,
+                'pass_count' => 3,
+            ]);
+
+        $event->refresh();
+        $this->assertSame('trimmed', $event->scoring_method);
+        $this->assertFalse($event->is_blind);
+        $this->assertSame(3, $event->pass_count);
+    }
+
     public function test_기본설정_최종집계표_서명란을_저장한다(): void
     {
         // 웹 폼은 show_judge_signs 를 문자열 '0'/'1' 로 보낸다.
