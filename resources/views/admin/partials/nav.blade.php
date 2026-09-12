@@ -1,7 +1,13 @@
 {{-- 행사 관리 공통 상단 메뉴 — 모든 관리 페이지 최상단에 include --}}
 @php
-    $candidateCount = $event->candidates()->count();
-    $judgeCount     = $event->judges()->count();
+    // 관계가 이미 적재돼 있으면 그것을 세고, 아니면 한 번만 조회한다.
+    // 관리 화면마다 뜨는 메뉴라 여기서 쿼리를 아끼면 전 화면이 같이 가벼워진다.
+    $candidateCount = $event->relationLoaded('candidates') ? $event->candidates->count() : $event->candidates()->count();
+    $judgeCount     = $event->relationLoaded('judges') ? $event->judges->count() : $event->judges()->count();
+
+    // totalMaxScore() 는 호출할 때마다 SUM 쿼리다 — 아래에서 두 번 쓰므로 한 번만 부른다
+    $totalMax       = $event->totalMaxScore();
+    $maxTotal       = \App\Services\EventSetup::TOTAL_MAX;
 
     $navTabs = [
         [
@@ -15,8 +21,8 @@
         [
             'label'    => '평가항목',
             'required' => true,
-            'sub'      => $event->totalMaxScore() === 100 ? '배점 합계 100점' : '필수: 배점 합계 100점 설정',
-            'urgent'   => $event->totalMaxScore() !== 100,
+            'sub'      => $totalMax === $maxTotal ? "배점 합계 {$maxTotal}점" : "필수: 배점 합계 {$maxTotal}점 설정",
+            'urgent'   => $totalMax !== $maxTotal,
             'href'     => route('admin.criteria', $event),
             'active'   => request()->routeIs('admin.criteria'),
             'tour'     => 'criteria',
