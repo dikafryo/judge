@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Sanctum\HasApiTokens;
 
 class Judge extends Model implements AuthenticatableContract
 {
@@ -50,11 +52,5 @@ class Judge extends Model implements AuthenticatableContract
         } while (static::where('code', $code)->exists());
 
         return $code;
-    }
-
-    /** 이 심사위원이 특정 대상 평가를 완료했는지 (모든 항목 점수 존재) */
-    public function completedCandidate(Candidate $candidate, int $criteriaCount): bool
-    {
-        return $this->scores()->where('candidate_id', $candidate->id)->count() >= $criteriaCount;
     }
 }

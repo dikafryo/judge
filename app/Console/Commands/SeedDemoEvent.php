@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use App\Models\Candidate;
@@ -52,17 +54,17 @@ class SeedDemoEvent extends Command
             Event::where('is_demo', true)->get()->each->delete();
 
             $event = Event::create([
-                'name'             => '[체험] 제12회 학생 창업 아이디어 경진대회',
-                'description'      => '온라인 심사 시스템을 둘러보기 위한 샘플 행사입니다. 실제 행사가 아니며, 이 행사에서는 아무것도 저장되지 않습니다.',
-                'event_date'       => now()->toDateString(),
-                'admin_password'   => Hash::make('demo-'.bin2hex(random_bytes(8))), // 로그인 화면으로는 못 들어옴 — /demo 버튼 전용
-                'is_open'          => true,
-                'is_demo'          => true,
-                'scoring_method'   => 'trimmed',
-                'pass_count'       => 3,
-                'is_blind'         => false,
+                'name' => '[체험] 제12회 학생 창업 아이디어 경진대회',
+                'description' => '온라인 심사 시스템을 둘러보기 위한 샘플 행사입니다. 실제 행사가 아니며, 이 행사에서는 아무것도 저장되지 않습니다.',
+                'event_date' => now()->toDateString(),
+                'admin_password' => Hash::make('demo-'.bin2hex(random_bytes(8))), // 로그인 화면으로는 못 들어옴 — /demo 버튼 전용
+                'is_open' => true,
+                'is_demo' => true,
+                'scoring_method' => 'trimmed',
+                'pass_count' => 3,
+                'is_blind' => false,
                 'show_judge_signs' => true,
-                'report_signers'   => [
+                'report_signers' => [
                     ['role' => '기록자', 'dept' => '창의교육과', 'position' => '주무관', 'name' => '홍길동'],
                     ['role' => '확인자', 'dept' => '창의교육과', 'position' => '과장',   'name' => '성춘향'],
                 ],
@@ -85,15 +87,15 @@ class SeedDemoEvent extends Command
     private function createCriteria(Event $event): array
     {
         $leaves = [];
-        $order  = 0;
+        $order = 0;
 
         foreach (self::CRITERIA as [$name, $max, $description, $children]) {
             $top = Criterion::create([
-                'event_id'    => $event->id,
-                'name'        => $name,
+                'event_id' => $event->id,
+                'name' => $name,
                 'description' => $description,
-                'max_score'   => $max,
-                'sort_order'  => ++$order,
+                'max_score' => $max,
+                'sort_order' => ++$order,
             ]);
 
             if (! $children) {
@@ -105,10 +107,10 @@ class SeedDemoEvent extends Command
             $childOrder = 0;
             foreach ($children as $childName => $childMax) {
                 $leaves[] = Criterion::create([
-                    'event_id'   => $event->id,
-                    'parent_id'  => $top->id,
-                    'name'       => $childName,
-                    'max_score'  => $childMax,
+                    'event_id' => $event->id,
+                    'parent_id' => $top->id,
+                    'name' => $childName,
+                    'max_score' => $childMax,
                     'sort_order' => ++$childOrder,
                 ]);
             }
@@ -126,11 +128,11 @@ class SeedDemoEvent extends Command
         // arrow function은 $order를 값으로 캡처해 증가가 누적되지 않으므로 foreach로 만든다
         foreach (self::CANDIDATES as [$name, $affiliation, $description]) {
             $candidates[] = Candidate::create([
-                'event_id'    => $event->id,
-                'name'        => $name,
+                'event_id' => $event->id,
+                'name' => $name,
                 'affiliation' => $affiliation,
                 'description' => $description,
-                'sort_order'  => ++$order,
+                'sort_order' => ++$order,
             ]);
         }
 
@@ -141,9 +143,9 @@ class SeedDemoEvent extends Command
     private function createJudges(Event $event): array
     {
         return array_map(fn ($name, $i) => Judge::create([
-            'event_id'  => $event->id,
-            'name'      => $name,
-            'code'      => self::JUDGE_CODES[$i],
+            'event_id' => $event->id,
+            'name' => $name,
+            'code' => self::JUDGE_CODES[$i],
             'signature' => $this->signatureImage($i),
             'signed_at' => now()->subMinutes(90 - $i * 7),
         ]), self::JUDGES, array_keys(self::JUDGES));
@@ -160,10 +162,10 @@ class SeedDemoEvent extends Command
 
         // 대상별 기본 실력치(0~1) · 심사위원별 성향 보정
         $strength = [0.86, 0.72, 0.93, 0.64, 0.78, 0.69];
-        $bias     = [0.03, -0.05, 0.00, 0.06, -0.02];
+        $bias = [0.03, -0.05, 0.00, 0.06, -0.02];
 
         $rows = [];
-        $now  = now();
+        $now = now();
 
         foreach ($judges as $j => $judge) {
             foreach ($candidates as $c => $candidate) {
@@ -178,12 +180,12 @@ class SeedDemoEvent extends Command
                     $score = max(1, (int) round($criterion->max_score * $ratio));
 
                     $rows[] = [
-                        'judge_id'     => $judge->id,
+                        'judge_id' => $judge->id,
                         'candidate_id' => $candidate->id,
                         'criterion_id' => $criterion->id,
-                        'score'        => $score,
-                        'created_at'   => $now,
-                        'updated_at'   => $now,
+                        'score' => $score,
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ];
                 }
             }
@@ -207,7 +209,7 @@ class SeedDemoEvent extends Command
         imagesetthickness($img, 3);
 
         mt_srand(4200 + $seed);
-        $amp   = mt_rand(18, 30);
+        $amp = mt_rand(18, 30);
         $waves = mt_rand(3, 5);
         $prevX = 30;
         $prevY = 70;
