@@ -6,6 +6,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\SetupRejected;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BulkCandidatesRequest;
+use App\Http\Requests\BulkJudgesRequest;
+use App\Http\Requests\DestroyEventRequest;
+use App\Http\Requests\StoreCriterionRequest;
+use App\Http\Requests\UpdateReportSignersRequest;
+use App\Http\Requests\UpdateScoringMethodRequest;
 use App\Models\Candidate;
 use App\Models\Criterion;
 use App\Models\Event;
@@ -92,15 +98,9 @@ class AdminApiController extends Controller
     }
 
     /** 집계 방식 · 블라인드 · 선정자 수 */
-    public function updateScoringMethod(Request $request): JsonResponse
+    public function updateScoringMethod(UpdateScoringMethodRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'scoring_method' => ['required', 'in:all,trimmed'],
-            'is_blind' => ['required', 'boolean'],
-            'pass_count' => ['nullable', 'integer', 'min:1', 'max:1000'],
-        ]);
-
-        $this->setup->updateScoringMethod($this->event($request), $data);
+        $this->setup->updateScoringMethod($this->event($request), $request->validated());
 
         return $this->show($request);
     }
@@ -116,22 +116,13 @@ class AdminApiController extends Controller
         ]);
     }
 
-    public function updateReportSigners(Request $request): JsonResponse
+    public function updateReportSigners(UpdateReportSignersRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'show_judge_signs' => ['required', 'boolean'],
-            'signers' => ['nullable', 'array'],
-            'signers.*.role' => ['required', 'string', 'in:기록자,검토자,확인자'],
-            'signers.*.dept' => ['nullable', 'string', 'max:50'],
-            'signers.*.position' => ['nullable', 'string', 'max:50'],
-            'signers.*.name' => ['nullable', 'string', 'max:50'],
-        ]);
-
         try {
             $this->setup->updateReportSigners(
                 $this->event($request),
-                (bool) $data['show_judge_signs'],
-                $data['signers'] ?? [],
+                $request->showJudgeSigns(),
+                $request->signerRows(),
             );
         } catch (SetupRejected $e) {
             return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
@@ -140,36 +131,23 @@ class AdminApiController extends Controller
         return $this->show($request);
     }
 
-    public function destroyEvent(Request $request): JsonResponse
+    public function destroyEvent(DestroyEventRequest $request): JsonResponse
     {
-        $data = $request->validate(['confirm_name' => ['required', 'string']]);
-        $event = $this->event($request);
-
-        if (trim($data['confirm_name']) !== $event->name) {
-            return response()->json([
-                'message' => '행사명이 일치하지 않아 삭제가 취소되었습니다.',
-                'errors' => ['confirm_name' => ['행사명이 일치하지 않습니다.']],
-            ], 422);
+        try {
+            $name = $this->setup->deleteEvent($this->event($request), $request->validated('confirm_name'));
+        } catch (SetupRejected $e) {
+            return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         }
-
-        $name = $this->setup->deleteEvent($event);
 
         return response()->json([
             'message' => "'{$name}' 행사와 모든 심사 데이터가 삭제되었습니다.",
         ]);
     }
 
-    public function storeCriterion(Request $request): JsonResponse
+    public function storeCriterion(StoreCriterionRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'description' => ['nullable', 'string', 'max:500'],
-            'max_score' => ['required', 'integer', 'min:1', 'max:100'],
-            'parent_id' => ['nullable', 'integer'],
-        ]);
-
         try {
-            $this->setup->addCriterion($this->event($request), $data);
+            $this->setup->addCriterion($this->event($request), $request->validated());
         } catch (SetupRejected $e) {
             return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         }
@@ -186,11 +164,9 @@ class AdminApiController extends Controller
         return $this->setup($request);
     }
 
-    public function storeCandidates(Request $request): JsonResponse
+    public function storeCandidates(BulkCandidatesRequest $request): JsonResponse
     {
-        $data = $request->validate(['bulk' => ['required', 'string', 'max:10000']]);
-
-        $this->setup->importCandidates($this->event($request), $data['bulk']);
+        $this->setup->importCandidates($this->event($request), $request->validated('bulk'));
 
         return $this->setup($request);
     }
@@ -204,11 +180,9 @@ class AdminApiController extends Controller
         return $this->setup($request);
     }
 
-    public function storeJudges(Request $request): JsonResponse
+    public function storeJudges(BulkJudgesRequest $request): JsonResponse
     {
-        $data = $request->validate(['bulk' => ['required', 'string', 'max:5000']]);
-
-        $this->setup->importJudges($this->event($request), $data['bulk']);
+        $this->setup->importJudges($this->event($request), $request->validated('bulk'));
 
         return $this->setup($request);
     }

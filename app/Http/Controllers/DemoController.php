@@ -27,8 +27,8 @@ class DemoController extends Controller
         $event->load(['judges', 'candidates', 'criteria']);
 
         return view('demo', [
-            'event'      => $event,
-            'judges'     => $event->judges,
+            'event' => $event,
+            'judges' => $event->judges,
             'candidates' => $event->candidates,
         ]);
     }
@@ -45,7 +45,7 @@ class DemoController extends Controller
             return redirect()->route('demo')->withErrors(['demo' => '체험용 샘플 행사가 아직 준비되지 않았습니다.']);
         }
 
-        $request->session()->put('event_admin_' . $event->id, true);
+        $request->session()->put($event->adminSessionKey(), true);
 
         return redirect()->route('admin.dashboard', $event);
     }
@@ -62,7 +62,7 @@ class DemoController extends Controller
             return redirect()->route('demo')->withErrors(['demo' => '체험용 샘플 행사가 아직 준비되지 않았습니다.']);
         }
 
-        $request->session()->put('event_admin_' . $event->id, true);
+        $request->session()->put($event->adminSessionKey(), true);
 
         return redirect()->route('admin.print', $event);
     }

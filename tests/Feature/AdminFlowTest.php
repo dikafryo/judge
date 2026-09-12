@@ -140,4 +140,22 @@ class AdminFlowTest extends TestCase
 
         $this->assertTrue($event->fresh()->show_judge_signs);
     }
+
+    public function test_결재란_역할은_정해진_셋_중_하나여야_한다(): void
+    {
+        // 웹은 역할을 배열 키로 보내서 규칙 문법으로 잡히지 않는다.
+        // 앱에만 있던 역할 화이트리스트를 웹도 같이 받는지 고정한다.
+        $event = Event::factory()->create();
+
+        $this->actingAsAdmin($event)
+            ->post(route('admin.report-signers', $event), [
+                'show_judge_signs' => '1',
+                'signers' => [
+                    '심사위원장' => ['dept' => '', 'position' => '', 'name' => '엉뚱한 역할'],
+                ],
+            ])
+            ->assertSessionHasErrors('signers.심사위원장.role');
+
+        $this->assertNull($event->fresh()->report_signers);
+    }
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\ScoreRejected;
+use App\Http\Requests\StoreJudgeScoresRequest;
+use App\Http\Requests\StoreSignatureRequest;
 use App\Models\Candidate;
 use App\Models\Judge;
 use App\Services\JudgePayloadService;
@@ -36,9 +38,9 @@ class JudgeController extends Controller
         // payload 조립은 서비스에 있다 — 네이티브 앱 API 가 같은 코드를 쓴다
         $payload = $payloads->build($judge, $event) + [
             'urls' => [
-                'scores'    => route('judge.scores', $judge),
+                'scores' => route('judge.scores', $judge),
                 'signature' => route('judge.signature', $judge),
-                'print'     => route('judge.print', $judge),
+                'print' => route('judge.print', $judge),
             ],
         ];
 
@@ -49,7 +51,7 @@ class JudgeController extends Controller
      * 점수 저장 (AJAX) — 대상 1건의 항목 점수를 통째로 교체한다.
      * 저장 규칙 자체는 ScoreWriter 에 있고 네이티브 앱 API 도 같은 코드를 쓴다.
      */
-    public function storeScores(Request $request, Judge $judge, ScoreWriter $writer): JsonResponse
+    public function storeScores(StoreJudgeScoresRequest $request, Judge $judge, ScoreWriter $writer): JsonResponse
     {
         $event = $judge->event;
 
@@ -57,11 +59,7 @@ class JudgeController extends Controller
             return response()->json(['message' => '심사가 마감되어 점수를 수정할 수 없습니다.'], 423);
         }
 
-        $data = $request->validate([
-            'candidate_id' => ['required', 'integer'],
-            'scores'       => ['required', 'array', 'min:1'],
-            'scores.*'     => ['nullable', 'numeric', 'min:0'],
-        ]);
+        $data = $request->validated();
 
         $candidate = Candidate::where('event_id', $event->id)->findOrFail($data['candidate_id']);
 
@@ -73,14 +71,10 @@ class JudgeController extends Controller
     }
 
     /** 전자서명 저장 (AJAX) — canvas PNG dataURL */
-    public function storeSignature(Request $request, Judge $judge): JsonResponse
+    public function storeSignature(StoreSignatureRequest $request, Judge $judge): JsonResponse
     {
-        $data = $request->validate([
-            'signature' => ['required', 'string', 'starts_with:data:image/png;base64,', 'max:200000'],
-        ]);
-
         $judge->update([
-            'signature' => $data['signature'],
+            'signature' => $request->validated('signature'),
             'signed_at' => now(),
         ]);
 
