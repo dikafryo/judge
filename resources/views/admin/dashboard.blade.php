@@ -24,8 +24,8 @@
                       x-bind:class="data?.event.scoring_method === 'trimmed' ? 'bg-violet-50 text-violet-700' : 'bg-slate-100 text-slate-600'"
                       x-text="data?.event.scoring_method === 'trimmed' ? '집계: 최고·최저 총점 제외' : '집계: 전체 합계·평균'"></span>
                 <span class="inline-flex items-center rounded-full bg-amber-50 text-amber-700 px-2.5 py-0.5 text-xs font-semibold"
-                      x-show="data && data.event.scoring_method === 'trimmed' && data.judges.length < 3" x-cloak>
-                    ⚠️ 심사위원 3명 미만 — 제외 없이 전체 집계
+                      x-show="data && data.event.scoring_method === 'trimmed' && data.judges.length < {{ $trimmedMinJudges }}" x-cloak>
+                    ⚠️ 심사위원 {{ $trimmedMinJudges }}명 미만 — 제외 없이 전체 집계
                 </span>
             </p>
         </div>
