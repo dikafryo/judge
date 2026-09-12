@@ -3,10 +3,7 @@
 @section('title', $event->name . ' 기본설정')
 
 @section('header-right')
-    <form method="POST" action="{{ route('admin.logout', $event) }}">
-        @csrf
-        <button class="text-slate-400 hover:text-slate-600">로그아웃</button>
-    </form>
+    <x-admin.logout-form :event="$event" />
 @endsection
 
 @section('content')

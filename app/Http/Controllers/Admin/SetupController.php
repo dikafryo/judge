@@ -43,8 +43,9 @@ class SetupController extends Controller
         $byParent = $event->criteria->groupBy('parent_id');
         $topCriteria = $event->criteria->whereNull('parent_id')->values();
         $totalMax = (int) $topCriteria->sum('max_score');
+        $maxTotal = EventSetup::TOTAL_MAX;
 
-        return view('admin.criteria', compact('event', 'totalMax', 'topCriteria', 'byParent'));
+        return view('admin.criteria', compact('event', 'totalMax', 'maxTotal', 'topCriteria', 'byParent'));
     }
 
     /** 평가 대상 관리 화면 */
