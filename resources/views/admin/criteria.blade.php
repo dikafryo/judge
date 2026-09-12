@@ -3,20 +3,17 @@
 @section('title', $event->name . ' 평가항목')
 
 @section('header-right')
-    <form method="POST" action="{{ route('admin.logout', $event) }}">
-        @csrf
-        <button class="text-slate-400 hover:text-slate-600">로그아웃</button>
-    </form>
+    <x-admin.logout-form :event="$event" />
 @endsection
 
 @section('content')
 @include('admin.partials.nav')
 
 {{-- 배점 합계 경고 --}}
-@if ($totalMax !== 100)
-    <div class="mb-6 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 text-sm">
-        ⚠️ 현재 평가 항목(1레벨) 배점 합계가 <strong>{{ $totalMax }}점</strong>입니다. 심사를 시작하려면 반드시 <strong>100점</strong>이 되도록 항목을 구성하세요.
-    </div>
+@if ($totalMax !== $maxTotal)
+    <x-alert class="mb-6">
+        ⚠️ 현재 평가 항목(1레벨) 배점 합계가 <strong>{{ $totalMax }}점</strong>입니다. 심사를 시작하려면 반드시 <strong>{{ $maxTotal }}점</strong>이 되도록 항목을 구성하세요.
+    </x-alert>
 @endif
 
 {{-- 2레벨 배점 불일치 경고 --}}
@@ -27,21 +24,21 @@
     });
 @endphp
 @if ($mismatchGroups->isNotEmpty())
-    <div class="mb-6 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 text-sm">
+    <x-alert class="mb-6">
         ⚠️ 2레벨 배점 합계가 1레벨 배점과 다릅니다:
         @foreach ($mismatchGroups as $g)
             <strong>{{ $g->name }}</strong> (2레벨 합계 {{ (int) $byParent->get($g->id, collect())->sum('max_score') }}점 / 1레벨 {{ $g->max_score }}점){{ $loop->last ? '' : ', ' }}
         @endforeach
         — 심사 시작 전에 맞춰 주세요.
-    </div>
+    </x-alert>
 @endif
 
 {{-- 평가 항목 --}}
 <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
     <div class="flex items-center justify-between mb-4">
         <h2 class="font-bold text-lg">평가 항목</h2>
-        <span class="text-sm font-semibold {{ $totalMax === 100 ? 'text-emerald-600' : 'text-amber-600' }}">
-            배점 합계 {{ $totalMax }} / 100
+        <span class="text-sm font-semibold {{ $totalMax === $maxTotal ? 'text-emerald-600' : 'text-amber-600' }}">
+            배점 합계 {{ $totalMax }} / {{ $maxTotal }}
         </span>
     </div>
 
