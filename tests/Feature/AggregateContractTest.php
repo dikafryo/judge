@@ -10,6 +10,7 @@ use App\Models\Criterion;
 use App\Models\Event;
 use App\Models\Judge;
 use App\Models\Score;
+use App\Services\ScoreAggregator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -72,7 +73,7 @@ class AggregateContractTest extends TestCase
 
     private function aggregate(Event $event): array
     {
-        return app(DashboardController::class)->aggregate($event->fresh());
+        return app(ScoreAggregator::class)->aggregate($event->fresh());
     }
 
     /** 집계 결과에서 한 대상의 행을 이름으로 찾는다 */
@@ -315,5 +316,22 @@ class AggregateContractTest extends TestCase
 
         $this->assertSame(100, $data['event']['total_max']);
         $this->assertSame('01', $data['rows'][0]['number'], '심사번호는 등록순 2자리다');
+    }
+
+    public function test_웹_컨트롤러는_같은_집계_서비스에_위임한다(): void
+    {
+        $event = $this->makeEvent(['scoring_method' => 'trimmed', 'pass_count' => 1]);
+        $candidate = $this->candidate($event, '가나다', 1);
+
+        $this->score($this->judge($event, '심사1'), $candidate, [30, 30]);
+        $this->score($this->judge($event, '심사2'), $candidate, [35, 35]);
+        $this->score($this->judge($event, '심사3'), $candidate, [40, 40]);
+
+        $viaController = app(DashboardController::class)->aggregate($event->fresh());
+        $viaService = $this->aggregate($event);
+
+        unset($viaController['generated_at'], $viaService['generated_at']);
+
+        $this->assertEquals($viaService, $viaController, '컨트롤러가 계산을 따로 하면 안 된다');
     }
 }
