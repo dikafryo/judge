@@ -105,6 +105,24 @@ class ScreenRenderTest extends TestCase
             ->assertSee($event->name, escape: false);
     }
 
+    public function test_기본설정은_집계_설정에_저장_버튼을_두지_않는다(): void
+    {
+        $event = $this->fullEvent();
+
+        $html = $this->actingAsAdmin($event)->get(route('admin.setup', $event))->assertOk()->getContent();
+
+        // 저장 버튼은 최종집계표 결재란 하나만 남는다 (noscript 안의 대체 버튼은 제외)
+        $withoutNoscript = preg_replace('/<noscript>.*?<\/noscript>/s', '', $html);
+        $this->assertSame(1, substr_count($withoutNoscript, '>저장</button>'));
+
+        // 세 그룹 각각에 저장 상태 표시가 붙어 있다
+        $this->assertSame(3, substr_count($html, 'role="status"'));
+        $this->assertStringContainsString('저장되었습니다', $html);
+
+        // JS 가 죽어도 저장할 수단은 남겨 둔다
+        $this->assertStringContainsString('<noscript>', $html);
+    }
+
     public function test_최종집계표에_집계_결과와_결재란이_실린다(): void
     {
         $event = $this->fullEvent();

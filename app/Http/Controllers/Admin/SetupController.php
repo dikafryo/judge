@@ -15,6 +15,7 @@ use App\Models\Candidate;
 use App\Models\Criterion;
 use App\Models\Event;
 use App\Models\Judge;
+use App\Models\Score;
 use App\Services\EventSetup;
 use App\Services\ScoreAggregator;
 use Illuminate\Http\JsonResponse;
@@ -36,7 +37,11 @@ class SetupController extends Controller
 
         $trimmedMinJudges = ScoreAggregator::TRIMMED_MIN_JUDGES;
 
-        return view('admin.setup', compact('event', 'trimmedMinJudges'));
+        // 이름 공개는 되돌려도 '이미 본 것'은 회복되지 않는다 —
+        // 심사가 진행 중이고 제출된 점수가 있을 때만 확인을 받는다.
+        $hasScores = Score::whereIn('judge_id', $event->judges->pluck('id'))->exists();
+
+        return view('admin.setup', compact('event', 'trimmedMinJudges', 'hasScores'));
     }
 
     /** 평가 항목 관리 화면 — 1·2레벨 항목 구성, 배점 합계 100점 필수 */
@@ -143,6 +148,7 @@ class SetupController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => '저장되었습니다.',
+                'detail' => $this->scoringMethodStatus($event), // 스크린리더에 읽어 줄 전체 문장
                 'scoring_method' => $event->scoring_method,
                 'is_blind' => $event->is_blind,
                 'pass_count' => $event->pass_count,
