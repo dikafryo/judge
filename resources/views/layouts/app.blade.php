@@ -71,20 +71,20 @@
     <main class="max-w-6xl mx-auto px-4 py-8">
         {{-- 플래시 메시지 --}}
         @if (session('status'))
-            <div class="mb-6 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 text-sm"
-                 x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)">
+            <x-alert tone="success" class="mb-6"
+                     x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)">
                 {{ session('status') }}
-            </div>
+            </x-alert>
         @endif
 
         @if ($errors->any())
-            <div class="mb-6 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 text-sm">
+            <x-alert tone="danger" class="mb-6">
                 <ul class="list-disc list-inside space-y-0.5">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
-            </div>
+            </x-alert>
         @endif
 
         @yield('content')

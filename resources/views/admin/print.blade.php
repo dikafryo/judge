@@ -97,8 +97,8 @@
                             @if ($total === null)
                                 -
                             @elseif ($isExcluded)
-                                {{-- 제외분은 붉은 취소선 — 총점을 통째로 빼므로 반영분은 없다 --}}
-                                <span class="excluded">{{ $total + 0 }}</span>
+                                {{-- 제외분은 붉은 취소선 + 괄호 — 취소선만 두면 흑백 복사·팩스에서 뭉갠다 --}}
+                                <span class="excluded">({{ $total + 0 }})</span>
                             @else
                                 {{ $total + 0 }}
                             @endif
@@ -123,7 +123,15 @@
         </tbody>
     </table>
 
-    {{-- 동점 미해소 경고만 유지 (※ 설명 문구는 출력물에서 제거) --}}
+    {{-- 결재자가 이 종이만 보고 검산할 수 있어야 한다.
+         절사 집계는 표시된 점수의 합과 총점이 다르므로 그 이유를 문서에 싣는다. --}}
+    @if ($event->scoring_method === 'trimmed')
+        <p class="note">
+            집계 방식: 최고·최저 총점 제외 (대상별 채점 완료 심사위원 {{ $trimmedMinJudges }}명 이상일 때 적용)<br>
+            ※ <span class="excluded">(취소선)</span> 점수는 최고·최저 총점으로 집계에서 제외된 점수입니다.
+        </p>
+    @endif
+
     @if ($event->pass_count && ! empty($data['pass_tie']))
         <p class="note">
             <span class="tie-cell">⚠️ {{ $data['pass_tie']['rank'] }}위 동점 {{ $data['pass_tie']['tied'] }}곳, 남은 선정 자리 {{ $data['pass_tie']['slots'] }}곳 — 동점 해소 후 다시 출력하세요.</span>

@@ -138,8 +138,13 @@ class ScreenRenderTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        // 최저(0)와 최고(90)가 모두 제외 표기되어야 한다
-        $this->assertSame(2, substr_count($html, 'class="excluded"'));
+        // 최저(0)와 최고(90)가 모두 제외 표기되어야 한다.
+        // 범례에도 같은 class 가 쓰이므로 숫자가 든 칸만 센다.
+        $this->assertSame(2, preg_match_all('/class="excluded">\(\d/', $html));
+
+        // 결재자가 검산할 수 있도록 취소선의 뜻이 같은 종이에 있어야 한다
+        $this->assertStringContainsString('집계에서 제외된 점수입니다', $html);
+        $this->assertStringContainsString('최고·최저 총점 제외', $html);
     }
 
     public function test_심사위원별_개별심사표가_열린다(): void

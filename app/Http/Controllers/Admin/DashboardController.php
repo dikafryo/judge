@@ -21,7 +21,9 @@ class DashboardController extends Controller
     /** 대시보드 화면 (데이터는 폴링 AJAX로 갱신) */
     public function index(Event $event): View
     {
-        return view('admin.dashboard', compact('event'));
+        $trimmedMinJudges = ScoreAggregator::TRIMMED_MIN_JUDGES;
+
+        return view('admin.dashboard', compact('event', 'trimmedMinJudges'));
     }
 
     /**
@@ -77,6 +79,8 @@ class DashboardController extends Controller
             ->values()
             ->all();
 
-        return view('admin.print', compact('event', 'data'));
+        $trimmedMinJudges = ScoreAggregator::TRIMMED_MIN_JUDGES;
+
+        return view('admin.print', compact('event', 'data', 'trimmedMinJudges'));
     }
 }

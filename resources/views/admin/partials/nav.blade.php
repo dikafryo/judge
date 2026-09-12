@@ -103,9 +103,9 @@
     </div>
 
     @unless ($event->is_open)
-        <div class="mt-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 px-4 py-2.5 text-sm">
+        <x-alert tone="danger" class="mt-3">
             🔒 심사가 마감되어 이 행사의 모든 설정·데이터 수정이 잠겼습니다. 조회와 출력만 가능하며, 수정하려면 <strong>기본설정</strong> 탭의 '심사 재개하기'를 누르세요.
-        </div>
+        </x-alert>
     @endunless
 </div>
 

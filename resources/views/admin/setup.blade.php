@@ -25,7 +25,7 @@
             <input type="radio" name="scoring_method" value="trimmed" @disabled(! $event->is_open)
                    {{ $event->scoring_method === 'trimmed' ? 'checked' : '' }}
                    class="text-indigo-600 focus:ring-indigo-500">
-            최고·최저 점수 제외 <span class="text-xs text-slate-400">(채점 3인 이상일 때 적용)</span>
+            최고·최저 점수 제외 <span class="text-xs text-slate-400">(채점 {{ $trimmedMinJudges }}인 이상일 때 적용)</span>
         </label>
 
         <div class="w-full flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 border-t border-slate-100">
@@ -56,7 +56,7 @@
                     class="rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-sm font-semibold px-4 py-1.5 transition">저장</button>
         </div>
     </form>
-    @if ($event->scoring_method === 'trimmed' && $event->judges->count() < 3)
+    @if ($event->scoring_method === 'trimmed' && $event->judges->count() < $trimmedMinJudges)
         <x-alert class="mt-3">
             ⚠️ 현재 심사위원이 <strong>{{ $event->judges->count() }}명</strong>입니다.
             최고·최저 제외는 <strong>대상별 채점 심사위원이 {{ $trimmedMinJudges }}명 이상</strong>일 때만 적용되며, 미만이면 제외 없이 전체 점수로 집계됩니다.
