@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\ScoreRejected;
 use App\Http\Requests\StoreJudgeScoresRequest;
 use App\Http\Requests\StoreSignatureRequest;
 use App\Models\Candidate;
@@ -63,11 +62,7 @@ class JudgeController extends Controller
 
         $candidate = Candidate::where('event_id', $event->id)->findOrFail($data['candidate_id']);
 
-        try {
-            return response()->json($writer->save($judge, $candidate, $data['scores']));
-        } catch (ScoreRejected $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json($writer->save($judge, $candidate, $data['scores']));
     }
 
     /** 전자서명 저장 (AJAX) — canvas PNG dataURL */

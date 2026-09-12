@@ -1,8 +1,17 @@
 <?php
 
+use App\Exceptions\ScoreRejected;
+use App\Exceptions\SetupRejected;
+use App\Http\Middleware\BlockDemoWrites;
+use App\Http\Middleware\EnsureApiEventWritable;
+use App\Http\Middleware\EnsureEventAdmin;
+use App\Http\Middleware\EnsureEventOpen;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,19 +32,32 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // 행사별 관리자 세션 미들웨어 별칭
         $middleware->alias([
-            'event.admin' => \App\Http\Middleware\EnsureEventAdmin::class,
-            'event.open'  => \App\Http\Middleware\EnsureEventOpen::class,
-            'demo.readonly' => \App\Http\Middleware\BlockDemoWrites::class,
+            'event.admin' => EnsureEventAdmin::class,
+            'event.open' => EnsureEventOpen::class,
+            'demo.readonly' => BlockDemoWrites::class,
 
             // 앱 전용 — 토큰이 곧 행사라 위 두 미들웨어(라우트의 {event} 를 봄)를 쓸 수 없다.
-            'api.writable' => \App\Http\Middleware\EnsureApiEventWritable::class,
+            'api.writable' => EnsureApiEventWritable::class,
 
             // Sanctum 토큰 능력 검사 — 심사위원 토큰(judge)과 관리자 토큰(admin)을 가른다.
             // Laravel 12+ 는 이 별칭을 자동 등록하지 않으므로 직접 넣어야 한다.
-            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
-            'ability'   => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+            'abilities' => CheckAbilities::class,
+            'ability' => CheckForAnyAbility::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // 도메인 규칙 위반을 한 곳에서 응답으로 옮긴다.
+        // 규칙은 서비스(EventSetup·ScoreWriter)에만 있고, 표현만 여기서 갈린다 —
+        // 웹은 폼으로 되돌리고 앱은 422 JSON 을 받는다.
+
+        $exceptions->render(function (SetupRejected $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            }
+
+            return back()->withErrors($e->errors())->withInput();
+        });
+
+        // 점수 저장은 웹도 AJAX 라 양쪽 모두 JSON 이다.
+        $exceptions->render(fn (ScoreRejected $e) => response()->json(['message' => $e->getMessage()], 422));
     })->create();

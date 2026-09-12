@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exceptions\SetupRejected;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkCandidatesRequest;
 use App\Http\Requests\BulkJudgesRequest;
@@ -87,11 +86,7 @@ class SetupController extends Controller
     {
         $data = $request->validated();
 
-        try {
-            $this->setup->addCriterion($event, $data);
-        } catch (SetupRejected $e) {
-            return back()->withErrors($e->errors())->withInput();
-        }
+        $this->setup->addCriterion($event, $data);
 
         return back()->with('status', empty($data['parent_id']) ? '평가 항목(1레벨)이 등록되었습니다.' : '평가 항목(2레벨)이 등록되었습니다.');
     }
@@ -163,17 +158,11 @@ class SetupController extends Controller
      */
     public function updateReportSigners(UpdateReportSignersRequest $request, Event $event): RedirectResponse
     {
-        try {
-            $signers = $this->setup->updateReportSigners(
-                $event,
-                $request->showJudgeSigns(),
-                $request->signerRows(),
-            );
-        } catch (SetupRejected $e) {
-            return back()->withErrors([
-                'signers' => $e->getMessage(),
-            ])->withInput();
-        }
+        $signers = $this->setup->updateReportSigners(
+            $event,
+            $request->showJudgeSigns(),
+            $request->signerRows(),
+        );
 
         $mode = $event->show_judge_signs
             ? '최종집계표에 심사위원 서명란을 포함합니다.'
@@ -189,11 +178,7 @@ class SetupController extends Controller
     /** 행사 삭제 — 행사명 재입력으로 확인, 대상·항목·심사위원·점수 전체 cascade 삭제 */
     public function destroyEvent(DestroyEventRequest $request, Event $event): RedirectResponse
     {
-        try {
-            $name = $this->setup->deleteEvent($event, $request->validated('confirm_name'));
-        } catch (SetupRejected $e) {
-            return back()->withErrors($e->errors());
-        }
+        $name = $this->setup->deleteEvent($event, $request->validated('confirm_name'));
 
         $request->session()->forget($event->adminSessionKey());
 

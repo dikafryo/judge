@@ -141,6 +141,35 @@ class AdminFlowTest extends TestCase
         $this->assertTrue($event->fresh()->show_judge_signs);
     }
 
+    public function test_집계_결과를_csv_파일로_내려받는다(): void
+    {
+        $event = Event::factory()->create(['name' => '가을/심사']);
+        $criterion = Criterion::factory()->for($event)->create(['max_score' => 100]);
+        $candidate = Candidate::factory()->for($event)->create(['name' => '가나다', 'affiliation' => '어느기관']);
+        $judge = Judge::factory()->for($event)->create(['name' => '김심사']);
+
+        $judge->scores()->create([
+            'candidate_id' => $candidate->id,
+            'criterion_id' => $criterion->id,
+            'score' => 88,
+        ]);
+
+        $response = $this->actingAsAdmin($event)->get(route('admin.export', $event))->assertOk();
+
+        $csv = $response->streamedContent();
+
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $csv, '엑셀이 한글을 읽으려면 BOM 이 필요하다');
+        // 공백이 든 항목은 fputcsv 가 따옴표로 감싼다
+        $this->assertStringContainsString('심사번호,순위,"평가 대상",소속,김심사,합계,평균', $csv);
+        $this->assertStringContainsString('01,1,가나다,어느기관,88,88,88', $csv);
+
+        // 파일명의 경로 구분자는 _ 로 바뀐다 (헤더에는 퍼센트 인코딩되어 실린다)
+        $this->assertStringContainsString(
+            rawurlencode('가을_심사_심사결과_'),
+            $response->headers->get('content-disposition'),
+        );
+    }
+
     public function test_결재란_역할은_정해진_셋_중_하나여야_한다(): void
     {
         // 웹은 역할을 배열 키로 보내서 규칙 문법으로 잡히지 않는다.

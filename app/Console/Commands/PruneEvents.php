@@ -16,15 +16,15 @@ class PruneEvents extends Command
         $now = now()->startOfDay();
 
         // 체험용 샘플 행사(is_demo)는 상시 공개용이므로 보관 기한을 적용하지 않는다
-        $targets = Event::where('is_demo', false)->get()->filter(function (Event $event) use ($now) {
-            $basis     = $event->event_date ?? $event->created_at;
+        $targets = Event::query()->real()->get()->filter(function (Event $event) use ($now) {
+            $basis = $event->event_date ?? $event->created_at;
             $keepUntil = $event->is_open ? $basis->copy()->addDays(30) : $basis->copy()->addYears(2);
 
             return $keepUntil->lt($now);
         });
 
         if ($targets->isEmpty()) {
-            $this->line(now()->format('Y-m-d H:i') . ' 삭제 대상 없음');
+            $this->line(now()->format('Y-m-d H:i').' 삭제 대상 없음');
 
             return self::SUCCESS;
         }
@@ -34,19 +34,19 @@ class PruneEvents extends Command
                 '#%d "%s" (기준일 %s, %s)',
                 $event->id,
                 $event->name,
-                ($event->event_date ?? $event->created_at)->format('Y-m-d') . ($event->event_date ? '' : ' — 행사일 미지정, 등록일 기준'),
+                ($event->event_date ?? $event->created_at)->format('Y-m-d').($event->event_date ? '' : ' — 행사일 미지정, 등록일 기준'),
                 $event->is_open ? '미마감 30일 경과' : '마감 2년 경과',
             );
 
             if ($this->option('dry-run')) {
-                $this->line('[dry-run] 삭제 대상: ' . $label);
+                $this->line('[dry-run] 삭제 대상: '.$label);
 
                 continue;
             }
 
             $event->delete(); // candidates/criteria/judges/scores는 FK cascade로 함께 삭제
 
-            $this->info(now()->format('Y-m-d H:i') . ' 삭제: ' . $label);
+            $this->info(now()->format('Y-m-d H:i').' 삭제: '.$label);
         }
 
         return self::SUCCESS;

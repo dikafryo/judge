@@ -20,7 +20,7 @@ class EventController extends Controller
     public function index(): View
     {
         $events = Event::query()
-            ->where('is_demo', false) // 체험용 샘플 행사는 /demo 에서만 안내
+            ->real()
             ->withCount(['candidates', 'criteria', 'judges'])
             ->latest()
             ->paginate(15);

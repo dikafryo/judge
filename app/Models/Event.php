@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,6 +24,15 @@ class Event extends Model implements AuthenticatableContract
     use HasFactory;
 
     protected $fillable = ['name', 'description', 'event_date', 'admin_password', 'is_open', 'is_demo', 'scoring_method', 'pass_count', 'is_blind', 'report_signers', 'show_judge_signs'];
+
+    /**
+     * 체험용 샘플을 뺀 실제 행사만.
+     * 샘플은 /demo 에서만 안내하고 목록·정리 작업에서는 늘 빠진다.
+     */
+    public function scopeReal(Builder $query): Builder
+    {
+        return $query->where('is_demo', false);
+    }
 
     /** 집계 방식 안내문 (대시보드·최종집계표 ※ 표기용) */
     public function scoringMethodNote(): string

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\ScoreRejected;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreScoresRequest;
 use App\Http\Requests\StoreSignatureRequest;
@@ -66,11 +65,7 @@ class JudgeApiController extends Controller
             return response()->json(['message' => '이 행사의 평가 대상이 아닙니다.'], 404);
         }
 
-        try {
-            return response()->json($writer->save($judge, $candidate, $request->validated('scores')));
-        } catch (ScoreRejected $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return response()->json($writer->save($judge, $candidate, $request->validated('scores')));
     }
 
     /** 전자서명 (PNG dataURL) */
