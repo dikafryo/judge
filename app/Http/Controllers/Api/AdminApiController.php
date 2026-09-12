@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\SetupRejected;
-use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Controller;
 use App\Models\Candidate;
 use App\Models\Criterion;
 use App\Models\Event;
 use App\Models\Judge;
 use App\Services\EventSetup;
+use App\Services\ScoreAggregator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\URL;
 /**
  * 관리자용 API. 토큰이 곧 행사라 URL 에 행사 id 를 다시 싣지 않는다.
  *
- * 집계는 DashboardController::aggregate() 를 그대로 재사용한다 —
- * 앱과 웹 대시보드가 다른 숫자를 보여주면 안 되므로 계산을 두 번 구현하지 않는다.
+ * 집계는 웹 대시보드와 같은 ScoreAggregator 를 쓴다 —
+ * 앱과 웹이 다른 숫자를 보여주면 안 되므로 계산을 두 번 구현하지 않는다.
  */
 class AdminApiController extends Controller
 {
@@ -222,9 +222,9 @@ class AdminApiController extends Controller
         return $this->setup($request);
     }
 
-    public function dashboard(Request $request, DashboardController $dashboard): JsonResponse
+    public function dashboard(Request $request, ScoreAggregator $aggregator): JsonResponse
     {
-        return response()->json($dashboard->aggregate($this->event($request)));
+        return response()->json($aggregator->aggregate($this->event($request)));
     }
 
     /**

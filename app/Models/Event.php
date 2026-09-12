@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
+use Laravel\Sanctum\HasApiTokens;
 
 class Event extends Model implements AuthenticatableContract
 {
@@ -33,11 +34,11 @@ class Event extends Model implements AuthenticatableContract
     protected function casts(): array
     {
         return [
-            'event_date'     => 'date',
-            'is_open'        => 'boolean',
-            'is_demo'        => 'boolean',
-            'is_blind'       => 'boolean',
-            'report_signers'   => 'array',
+            'event_date' => 'date',
+            'is_open' => 'boolean',
+            'is_demo' => 'boolean',
+            'is_blind' => 'boolean',
+            'report_signers' => 'array',
             'show_judge_signs' => 'boolean',
         ];
     }
@@ -72,12 +73,17 @@ class Event extends Model implements AuthenticatableContract
     /**
      * 채점 대상이 되는 말단 항목 목록 (대분류 순서대로).
      * 서브항목이 있는 대분류는 서브항목들이, 없으면 대분류 자신이 말단이다.
+     *
+     * 관계가 아니라 계산 결과라 Collection 을 돌려준다 — `$event->leafCriteria` 로는 못 쓴다.
+     *
+     * @return Collection<int, Criterion>
      */
-    public function leafCriteria()
+    public function leafCriteria(): Collection
     {
-        $all      = $this->criteria()->get();
+        // 이미 적재됐으면 다시 조회하지 않는다 (집계는 load('criteria') 직후에 부른다)
+        $all = $this->relationLoaded('criteria') ? $this->criteria : $this->criteria()->get();
         $byParent = $all->groupBy('parent_id');
-        $leaves   = collect();
+        $leaves = collect();
 
         foreach ($all->whereNull('parent_id') as $top) {
             $children = $byParent->get($top->id, collect());
