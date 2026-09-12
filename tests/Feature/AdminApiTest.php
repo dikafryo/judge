@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Candidate;
@@ -8,6 +10,7 @@ use App\Models\Event;
 use App\Models\Judge;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 /**
@@ -36,7 +39,7 @@ class AdminApiTest extends TestCase
 
     private function admin(Event $event): array
     {
-        return ['Authorization' => 'Bearer ' . $this->token($event)];
+        return ['Authorization' => 'Bearer '.$this->token($event)];
     }
 
     public function test_행사_목록에_체험용_샘플은_빠진다(): void
@@ -57,7 +60,7 @@ class AdminApiTest extends TestCase
         ])->assertStatus(201);
 
         $this->getJson('/api/v1/admin/setup', [
-            'Authorization' => 'Bearer ' . $response->json('token'),
+            'Authorization' => 'Bearer '.$response->json('token'),
         ])->assertOk();
     }
 
@@ -143,6 +146,8 @@ class AdminApiTest extends TestCase
     public function test_마감하면_설정을_바꿀_수_없다(): void
     {
         $event = Event::factory()->create();
+        $judge = Judge::factory()->for($event)->create();
+        $judgeToken = $judge->createToken('judge-app', ['judge'])->plainTextToken;
         $headers = $this->admin($event);
 
         $this->postJson('/api/v1/admin/toggle-open', [], $headers)
@@ -150,14 +155,20 @@ class AdminApiTest extends TestCase
 
         $this->postJson('/api/v1/admin/candidates', ['bulk' => '가나다'], $headers)
             ->assertStatus(423);
+        $this->assertNull($judge->fresh()->code);
+        $this->getJson('/api/v1/judge/me', ['Authorization' => 'Bearer '.$judgeToken])
+            ->assertForbidden();
     }
 
     public function test_마감_상태에서도_재개는_된다(): void
     {
         $event = Event::factory()->closed()->create();
+        $judge = Judge::factory()->for($event)->create(['code' => null]);
 
         $this->postJson('/api/v1/admin/toggle-open', [], $this->admin($event))
             ->assertOk()->assertJsonPath('is_open', true);
+
+        $this->assertMatchesRegularExpression('/^\d{6}$/', (string) $judge->fresh()->code);
     }
 
     public function test_체험용_행사는_앱에서도_바꿀_수_없다(): void
@@ -184,14 +195,14 @@ class AdminApiTest extends TestCase
         $this->assertDatabaseHas('candidates', ['id' => $victim->id]);
     }
 
-    public function test_심사위원_토큰으로는_관리_API_에_못_들어간다(): void
+    public function test_심사위원_토큰으로는_관리_ap_i_에_못_들어간다(): void
     {
         $event = Event::factory()->create();
         $judge = Judge::factory()->for($event)->create();
 
         $token = $this->postJson('/api/v1/judge/session', ['code' => $judge->code])->json('token');
 
-        $this->getJson('/api/v1/admin/setup', ['Authorization' => 'Bearer ' . $token])
+        $this->getJson('/api/v1/admin/setup', ['Authorization' => 'Bearer '.$token])
             ->assertStatus(403);
     }
 
@@ -214,7 +225,7 @@ class AdminApiTest extends TestCase
         $url = $this->getJson('/api/v1/admin/print-url?kind=report', $this->admin($event))
             ->assertOk()->json('url');
 
-        $this->get($url . 'X')->assertRedirect(route('admin.login', $event));
+        $this->get($url.'X')->assertRedirect(route('admin.login', $event));
         $this->get(route('admin.print', $event))->assertRedirect(route('admin.login', $event));
     }
 
@@ -223,7 +234,7 @@ class AdminApiTest extends TestCase
         // 서명 URL 은 열람 전용이다. 여기가 뚫리면 링크 하나로 행사가 마감된다.
         $event = Event::factory()->create();
 
-        $signed = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+        $signed = URL::temporarySignedRoute(
             'admin.toggle-open', now()->addMinutes(10), $event,
         );
 
@@ -246,9 +257,67 @@ class AdminApiTest extends TestCase
 
         $viaApp = $this->getJson('/api/v1/admin/dashboard', $this->admin($event))->assertOk()->json();
 
-        $this->withSession(['event_admin_' . $event->id => true]);
+        $this->withSession(['event_admin_'.$event->id => true]);
         $viaWeb = $this->getJson(route('admin.dashboard.data', $event))->assertOk()->json();
 
         $this->assertSame($viaWeb, $viaApp, '같은 aggregate() 를 쓰므로 숫자가 어긋나면 안 된다');
+    }
+
+    public function test_앱에서_마감_후에도_최종집계표_서명과_결재란을_저장한다(): void
+    {
+        $event = Event::factory()->closed()->create();
+
+        $response = $this->putJson('/api/v1/admin/report-signers', [
+            'show_judge_signs' => false,
+            'signers' => [
+                ['role' => '기록자', 'dept' => '총무과', 'position' => '주무관', 'name' => '김기록'],
+                ['role' => '검토자', 'dept' => '', 'position' => '', 'name' => ''],
+            ],
+        ], $this->admin($event))->assertOk();
+
+        $response->assertJsonPath('show_judge_signs', false);
+        $response->assertJsonPath('report_signers.0.role', '기록자');
+        $response->assertJsonPath('report_signers.0.name', '김기록');
+        $this->assertCount(1, $event->fresh()->report_signers);
+    }
+
+    public function test_심사위원_서명란을_생략하면_기록자_결재가_필수다(): void
+    {
+        $event = Event::factory()->create();
+
+        $this->putJson('/api/v1/admin/report-signers', [
+            'show_judge_signs' => false,
+            'signers' => [],
+        ], $this->admin($event))
+            ->assertStatus(422)
+            ->assertJsonPath('errors.signers', fn (string $message): bool => str_contains($message, '기록자'));
+    }
+
+    public function test_앱에서_행사명을_확인한_뒤_행사를_삭제한다(): void
+    {
+        $event = Event::factory()->closed()->create(['name' => '삭제할 행사']);
+        Candidate::factory()->for($event)->create();
+        $judge = Judge::factory()->for($event)->create();
+        $judge->createToken('judge-app', ['judge']);
+        $headers = $this->admin($event);
+
+        $this->deleteJson('/api/v1/admin/event', ['confirm_name' => '다른 행사'], $headers)
+            ->assertStatus(422);
+        $this->assertDatabaseHas('events', ['id' => $event->id]);
+
+        $this->deleteJson('/api/v1/admin/event', ['confirm_name' => '삭제할 행사'], $headers)
+            ->assertOk()
+            ->assertJsonPath('message', "'삭제할 행사' 행사와 모든 심사 데이터가 삭제되었습니다.");
+
+        $this->assertDatabaseMissing('events', ['id' => $event->id]);
+        $this->assertDatabaseMissing('candidates', ['event_id' => $event->id]);
+        $this->assertDatabaseMissing('personal_access_tokens', [
+            'tokenable_type' => Judge::class,
+            'tokenable_id' => $judge->id,
+        ]);
+        $this->assertDatabaseMissing('personal_access_tokens', [
+            'tokenable_type' => Event::class,
+            'tokenable_id' => $event->id,
+        ]);
     }
 }

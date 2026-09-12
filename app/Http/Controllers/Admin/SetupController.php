@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Exceptions\SetupRejected;
@@ -19,9 +21,7 @@ use Illuminate\View\View;
  */
 class SetupController extends Controller
 {
-    public function __construct(private readonly EventSetup $setup)
-    {
-    }
+    public function __construct(private readonly EventSetup $setup) {}
 
     /** 기본설정 화면 — 집계 방식 / 최종집계표 서명 / 행사 삭제 */
     public function index(Event $event): View
@@ -36,9 +36,9 @@ class SetupController extends Controller
     {
         $event->load('criteria');
 
-        $byParent    = $event->criteria->groupBy('parent_id');
+        $byParent = $event->criteria->groupBy('parent_id');
         $topCriteria = $event->criteria->whereNull('parent_id')->values();
-        $totalMax    = (int) $topCriteria->sum('max_score');
+        $totalMax = (int) $topCriteria->sum('max_score');
 
         return view('admin.criteria', compact('event', 'totalMax', 'topCriteria', 'byParent'));
     }
@@ -83,10 +83,10 @@ class SetupController extends Controller
     public function storeCriterion(Request $request, Event $event): RedirectResponse
     {
         $data = $request->validate([
-            'name'        => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:500'],
-            'max_score'   => ['required', 'integer', 'min:1', 'max:100'],
-            'parent_id'   => ['nullable', 'integer'],
+            'max_score' => ['required', 'integer', 'min:1', 'max:100'],
+            'parent_id' => ['nullable', 'integer'],
         ], [], ['name' => '항목명', 'max_score' => '배점', 'parent_id' => '1레벨 항목']);
 
         try {
@@ -143,8 +143,8 @@ class SetupController extends Controller
     {
         $data = $request->validate([
             'scoring_method' => ['required', 'in:all,trimmed'],
-            'is_blind'       => ['required', 'boolean'],
-            'pass_count'     => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'is_blind' => ['required', 'boolean'],
+            'pass_count' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ], [], ['scoring_method' => '집계 방식', 'is_blind' => '심사위원 화면', 'pass_count' => '선정자 수']);
 
         $this->setup->updateScoringMethod($event, $data);
@@ -161,7 +161,7 @@ class SetupController extends Controller
             ? " 선정자(선정기관) 수: {$event->pass_count}곳 — 집계 화면에 상위 {$event->pass_count}곳이 선정으로 표시됩니다."
             : ' 선정자 수는 미지정입니다.';
 
-        return back()->with('status', $method . $blind . $pass);
+        return back()->with('status', $method.$blind.$pass);
     }
 
     /**
@@ -172,51 +172,36 @@ class SetupController extends Controller
     public function updateReportSigners(Request $request, Event $event): RedirectResponse
     {
         $data = $request->validate([
-            'show_judge_signs'   => ['required', 'boolean'],
-            'signers'            => ['nullable', 'array'],
-            'signers.*.dept'     => ['nullable', 'string', 'max:50'],
+            'show_judge_signs' => ['required', 'boolean'],
+            'signers' => ['nullable', 'array'],
+            'signers.*.dept' => ['nullable', 'string', 'max:50'],
             'signers.*.position' => ['nullable', 'string', 'max:50'],
-            'signers.*.name'     => ['nullable', 'string', 'max:50'],
+            'signers.*.name' => ['nullable', 'string', 'max:50'],
         ], [], ['show_judge_signs' => '심사위원 서명란', 'signers.*.dept' => '부서', 'signers.*.position' => '직급', 'signers.*.name' => '이름']);
 
-        $signers = [];
+        $rows = collect($data['signers'] ?? [])
+            ->map(fn (array $row, string $role): array => ['role' => $role, ...$row])
+            ->values()
+            ->all();
 
-        foreach (['기록자', '검토자', '확인자'] as $role) {
-            $row = $data['signers'][$role] ?? [];
-
-            if (trim($row['name'] ?? '') === '') {
-                continue;
-            }
-
-            $signers[] = [
-                'role'     => $role,
-                'dept'     => trim($row['dept'] ?? ''),
-                'position' => trim($row['position'] ?? ''),
-                'name'     => trim($row['name']),
-            ];
-        }
-
-        // 심사위원 서명란을 생략하면 결재란이 유일한 확인 수단 — 기록자는 반드시 있어야 한다
-        if (! $data['show_judge_signs'] && ! in_array('기록자', array_column($signers, 'role'), true)) {
+        try {
+            // 웹 폼은 '0'/'1' 문자열로 보낸다 — bool 타입힌트에 그대로 넘기면 strict_types 에서 500 이 난다.
+            $signers = $this->setup->updateReportSigners($event, (bool) $data['show_judge_signs'], $rows);
+        } catch (SetupRejected $e) {
             return back()->withErrors([
-                'signers' => '심사위원 서명란을 생략하려면 결재란이 필수입니다 — 최소한 기록자 이름을 입력하세요.',
+                'signers' => $e->getMessage(),
             ])->withInput();
         }
-
-        $event->update([
-            'show_judge_signs' => $data['show_judge_signs'],
-            'report_signers'   => $signers ?: null,
-        ]);
 
         $mode = $event->show_judge_signs
             ? '최종집계표에 심사위원 서명란을 포함합니다.'
             : '최종집계표에서 심사위원 서명란을 생략하고 결재란만 표시합니다.';
 
         $signerNote = $signers
-            ? ' 결재란: ' . implode(', ', array_column($signers, 'role'))
+            ? ' 결재란: '.implode(', ', array_column($signers, 'role'))
             : ' 결재란: 없음.';
 
-        return back()->with('status', $mode . $signerNote);
+        return back()->with('status', $mode.$signerNote);
     }
 
     /** 행사 삭제 — 행사명 재입력으로 확인, 대상·항목·심사위원·점수 전체 cascade 삭제 */
@@ -232,10 +217,9 @@ class SetupController extends Controller
             ]);
         }
 
-        $name = $event->name;
-        $event->delete();
+        $name = $this->setup->deleteEvent($event);
 
-        $request->session()->forget('event_admin_' . $event->id);
+        $request->session()->forget('event_admin_'.$event->id);
 
         return redirect()->route('home')->with('status', "'{$name}' 행사와 모든 심사 데이터가 삭제되었습니다.");
     }
