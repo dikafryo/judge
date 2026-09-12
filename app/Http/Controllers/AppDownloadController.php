@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use Illuminate\View\View;
@@ -47,14 +49,14 @@ class AppDownloadController extends Controller
         }
 
         $sha256 = (string) ($data['sha256'] ?? '');
-        $size   = max(0, (int) ($data['sizeBytes'] ?? 0));
+        $size = max(0, (int) ($data['sizeBytes'] ?? 0));
 
         return [
-            'version'     => (string) ($data['version'] ?? '—'),
-            'build'       => max(0, (int) ($data['build'] ?? 0)),
-            'apk'         => $apk,
-            'sizeText'    => number_format($size / 1048576, 1) . ' MB',
-            'sha256'      => preg_match('/^[a-f0-9]{64}$/', $sha256) === 1 ? $sha256 : '',
+            'version' => (string) ($data['version'] ?? '—'),
+            'build' => max(0, (int) ($data['build'] ?? 0)),
+            'apk' => $apk,
+            'sizeText' => number_format($size / 1048576, 1).' MB',
+            'sha256' => preg_match('/^[a-f0-9]{64}$/', $sha256) === 1 ? $sha256 : '',
             'publishedAt' => $this->parseDate($data['publishedAt'] ?? null),
         ];
     }
