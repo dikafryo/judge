@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\Judge;
+use App\Services\JudgePayloadService;
 use App\Services\ResultCsvExporter;
 use App\Services\ScoreAggregator;
 use Illuminate\Http\JsonResponse;
@@ -53,16 +54,13 @@ class DashboardController extends Controller
     }
 
     /** 심사위원별 개별심사표 인쇄 (관리자용 — 코드 회수 후에도 출력 가능) */
-    public function printJudgeSheet(Event $event, Judge $judge): View
+    public function printJudgeSheet(Event $event, Judge $judge, JudgePayloadService $payload): View
     {
         abort_unless($judge->event_id === $event->id, 404);
 
         $event->load(['candidates', 'criteria']);
 
-        $myScores = $judge->scores()
-            ->get()
-            ->groupBy('candidate_id')
-            ->map(fn ($group) => $group->pluck('score', 'criterion_id'));
+        $myScores = $payload->scoresByCandidate($judge);
 
         return view('judge.print', compact('judge', 'event', 'myScores'));
     }

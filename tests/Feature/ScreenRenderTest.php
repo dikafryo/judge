@@ -117,6 +117,31 @@ class ScreenRenderTest extends TestCase
         $response->assertSee('총무과', escape: false);
     }
 
+    public function test_최종집계표는_0점을_준_심사위원의_절사도_취소선으로_표시한다(): void
+    {
+        // 제외 여부를 값의 크기로 판단하면 0점 준 심사위원이 제외돼도 그냥 0 으로 보인다.
+        $event = Event::factory()->create(['scoring_method' => 'trimmed']);
+        $criterion = Criterion::factory()->for($event)->create(['max_score' => 100]);
+        $candidate = Candidate::factory()->for($event)->create(['name' => '가나다']);
+
+        foreach ([0, 50, 90] as $score) {
+            $judge = Judge::factory()->for($event)->create();
+            $judge->scores()->create([
+                'candidate_id' => $candidate->id,
+                'criterion_id' => $criterion->id,
+                'score' => $score,
+            ]);
+        }
+
+        $html = $this->actingAsAdmin($event)
+            ->get(route('admin.print', $event))
+            ->assertOk()
+            ->getContent();
+
+        // 최저(0)와 최고(90)가 모두 제외 표기되어야 한다
+        $this->assertSame(2, substr_count($html, 'class="excluded"'));
+    }
+
     public function test_심사위원별_개별심사표가_열린다(): void
     {
         $event = $this->fullEvent();
