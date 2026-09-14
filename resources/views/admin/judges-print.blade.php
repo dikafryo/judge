@@ -1,16 +1,9 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ $event->name }} 심사위원 접속 안내</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
-            color: #111; padding: 32px; font-size: 13px;
-        }
-        h1 { text-align: center; font-size: 20px; margin-bottom: 4px; }
+{{-- 심사위원 접속 안내 — 점선을 따라 잘라 개별 전달하는 카드.
+     화면에서도 실제 A4 크기로 보여야 몇 장짜리인지, 카드가 어디서 잘리는지 알 수 있다. --}}
+<x-print-page :title="$event->name . ' 심사위원 접속 안내'" margin="12mm 14mm" print-padding="0">
+    <x-slot:styles>
+        body { font-size: 13px; }
+        h1 { font-size: 20px; margin-bottom: 4px; }
         .subtitle { text-align: center; color: #666; font-size: 12px; margin-bottom: 24px; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -31,7 +24,8 @@
             font-size: 22px; font-weight: bold; letter-spacing: 4px;
             border: 1px solid #333; border-radius: 6px; padding: 3px 10px;
         }
-        .hint { margin-top: 6px; color: #999; font-size: 10px; }
+        /* 접속 주소는 길어서 칸을 넘칠 수 있다 — keep-all 을 여기서만 푼다 */
+        .hint { margin-top: 6px; color: #999; font-size: 10px; word-break: break-all; }
 
         .empty { text-align: center; color: #888; padding: 60px 0; }
 
@@ -40,14 +34,8 @@
             background: #4f46e5; color: #fff; border: 0; border-radius: 8px;
             padding: 10px 28px; font-size: 14px; cursor: pointer;
         }
-        @media print {
-            .toolbar { display: none; }
-            body { padding: 0; }
-            @page { size: A4 portrait; margin: 12mm 14mm; }
-        }
-    </style>
-</head>
-<body>
+    </x-slot:styles>
+
     <div class="toolbar"><button onclick="window.print()">🖨️ 인쇄하기</button></div>
 
     <h1>{{ $event->name }} — 심사위원 접속 안내</h1>
@@ -78,6 +66,7 @@
         </div>
     @endif
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
     <script>
         document.querySelectorAll('.qr').forEach(function (el) {
             var qr = qrcode(0, 'M');
@@ -86,5 +75,4 @@
             el.innerHTML = qr.createSvgTag({ cellSize: 3, margin: 0, scalable: true });
         });
     </script>
-</body>
-</html>
+</x-print-page>

@@ -123,6 +123,24 @@ class ScreenRenderTest extends TestCase
         $this->assertStringContainsString('<noscript>', $html);
     }
 
+    public function test_심사위원_접속안내도_화면에서_실제_용지_크기로_보인다(): void
+    {
+        $event = $this->fullEvent();
+
+        $html = $this->actingAsAdmin($event)->get(route('admin.judges.print', $event))->assertOk()->getContent();
+
+        // 다른 인쇄물과 같은 A4 껍데기를 쓴다
+        $this->assertStringContainsString('width: 210mm', $html);
+        $this->assertStringContainsString('min-height: 297mm', $html);
+
+        // 실제 인쇄 여백은 이전과 같아야 한다
+        $this->assertStringContainsString('@page { size: A4 portrait; margin: 12mm 14mm; }', $html);
+
+        // 카드와 QR 은 그대로
+        $this->assertStringContainsString('class="grid"', $html);
+        $this->assertStringContainsString('qrcode-generator', $html);
+    }
+
     public function test_최종집계표에_집계_결과와_결재란이_실린다(): void
     {
         $event = $this->fullEvent();
