@@ -4,8 +4,9 @@
      각 문서의 CSS 는 styles 슬롯으로 받는다.
 
      · margin: 본문 패딩 = @page 여백 (미리보기와 실제 인쇄를 일치시킨다)
-     · colorExact: 배경색을 인쇄에도 그대로 (선정 행 강조가 빠지면 안 되는 문서용) --}}
-@props(['title', 'margin' => '15mm 18mm', 'colorExact' => false])
+     · colorExact: 배경색을 인쇄에도 그대로 (선정 행 강조가 빠지면 안 되는 문서용)
+     · printPadding: 인쇄 시 본문 좌우 보강 여백. 칸을 꽉 채우는 문서는 0 으로 끈다 --}}
+@props(['title', 'margin' => '15mm 18mm', 'colorExact' => false, 'printPadding' => '0 6mm'])
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -31,7 +32,7 @@
         @media print {
             .toolbar { display: none; }
             html { background: none; }
-            body { width: auto; min-height: 0; margin: 0; padding: 0 6mm; box-shadow: none; } /* 좌우 여백 보강 */
+            body { width: auto; min-height: 0; margin: 0; padding: {{ $printPadding }}; box-shadow: none; }
             @page { size: A4 portrait; margin: {{ $margin }}; }
             @if ($colorExact)
                 /* 선정 행 배경 등 강조색이 인쇄에서 빠지지 않도록 */
