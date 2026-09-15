@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController;
-use App\Http\Controllers\AppDownloadController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\SetupController;
+use App\Http\Controllers\AppDownloadController;
 use App\Http\Controllers\DemoController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\JudgeController;
@@ -43,6 +43,18 @@ Route::get('/csrf', fn () => response()->json(['token' => csrf_token()]))->name(
 | APK 파일 자체는 nginx 가 public/downloads/ 에서 정적으로 내보낸다.
 */
 Route::get('/app', [AppDownloadController::class, 'index'])->name('app.download');
+
+/*
+|--------------------------------------------------------------------------
+| 개인정보처리방침
+|--------------------------------------------------------------------------
+| 플레이스토어 등록에 공개 URL 이 필수다. 앱과 웹이 같은 서버·같은 데이터를 쓰므로
+| 문서도 하나만 둔다. 시행일과 문의처는 config/judge.php 에서 온다.
+*/
+Route::view('/privacy', 'privacy', [
+    'contactEmail' => config('judge.contact_email'),
+    'effectiveDate' => config('judge.privacy_effective_date'),
+])->name('privacy');
 
 /*
 |--------------------------------------------------------------------------

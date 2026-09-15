@@ -209,6 +209,16 @@ class ScreenRenderTest extends TestCase
             ->assertSee('창의성', escape: false);
     }
 
+    public function test_개인정보처리방침이_로그인_없이_열린다(): void
+    {
+        // 플레이스토어가 이 URL 을 심사에서 직접 열어 본다 — 인증이 걸리면 반려된다.
+        $response = $this->get(route('privacy'))->assertOk();
+
+        $response->assertSee('개인정보처리방침', escape: false);
+        $response->assertSee(config('judge.contact_email'), escape: false);
+        $response->assertSee('카메라', escape: false);   // QR 스캔 권한 설명
+    }
+
     public function test_공개_화면이_열린다(): void
     {
         Event::factory()->create(['name' => '목록에 뜨는 행사']);
