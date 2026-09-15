@@ -219,6 +219,21 @@ class ScreenRenderTest extends TestCase
         $response->assertSee('카메라', escape: false);   // QR 스캔 권한 설명
     }
 
+    public function test_모든_화면_하단에서_개인정보처리방침으로_갈_수_있다(): void
+    {
+        // 스토어 심사에서 앱 안에 방침 링크가 있는지도 본다.
+        $event = $this->fullEvent();
+
+        foreach ([route('home'), route('events.index')] as $url) {
+            $this->get($url)->assertOk()->assertSee(route('privacy'), escape: false);
+        }
+
+        $this->actingAsAdmin($event)
+            ->get(route('admin.setup', $event))
+            ->assertOk()
+            ->assertSee(route('privacy'), escape: false);
+    }
+
     public function test_공개_화면이_열린다(): void
     {
         Event::factory()->create(['name' => '목록에 뜨는 행사']);
