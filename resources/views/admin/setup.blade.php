@@ -69,9 +69,8 @@
             </label>
             <x-admin.save-state group="defaultScore" />
             <p class="w-full text-xs text-slate-400">
-                심사위원이 화면을 열면 각 평가 항목 <strong>만점의 이 비율</strong>만큼 점수가 미리 입력되어 있고, 위아래로 조정해 제출합니다.
+                심사위원이 화면을 열면 각 평가 항목 <strong>만점의 이 비율</strong>만큼 점수가 미리 입력되어 있고, 위아래로 조정해 심사를 보다 쉽게 할 수 있게 합니다.
                 예를 들어 <strong>90</strong>이면 20점짜리 항목에 18점이 채워집니다.
-                이미 입력한 점수가 있으면 그 점수가 그대로 남습니다. 비워 두면 채우지 않습니다.
             </p>
         </div>
 

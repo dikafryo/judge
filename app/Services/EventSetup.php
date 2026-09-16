@@ -167,7 +167,7 @@ class EventSetup
     /**
      * 집계 방식·블라인드·선정자 수.
      *
-     * @param  array{scoring_method: string, is_blind: bool, pass_count?: int|null}  $data
+     * @param  array{scoring_method: string, is_blind: bool, pass_count?: int|null, default_score_percent?: int|null}  $data
      */
     public function updateScoringMethod(Event $event, array $data): void
     {
@@ -175,8 +175,14 @@ class EventSetup
             'scoring_method' => $data['scoring_method'],
             'is_blind' => $data['is_blind'],
             'pass_count' => $data['pass_count'] ?? null,
-            'default_score_percent' => $data['default_score_percent'] ?? null,
         ]);
+
+        // 키가 아예 없으면 건드리지 않는다. 심사 기본점수를 모르는 구버전 앱이
+        // 집계 설정을 저장할 때 관리자가 정해 둔 값을 지워 버리면 안 된다.
+        // 명시적인 null 은 "사용 안 함" 이므로 그대로 저장한다.
+        if (array_key_exists('default_score_percent', $data)) {
+            $event->update(['default_score_percent' => $data['default_score_percent']]);
+        }
     }
 
     /**

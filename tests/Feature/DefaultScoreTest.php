@@ -106,6 +106,23 @@ class DefaultScoreTest extends TestCase
         $this->assertSame(50, $payload['defaultScorePercent']);
     }
 
+    /**
+     * 심사 기본점수를 모르는 구버전 앱도 집계 설정을 저장한다. 그때 세 값만 보내는데,
+     * 없는 키를 null 로 읽으면 관리자가 정해 둔 기본점수가 조용히 지워진다.
+     */
+    public function test_키가_없으면_기존_값을_건드리지_않는다(): void
+    {
+        $event = Event::factory()->create(['default_score_percent' => 90]);
+
+        $this->actingAsAdmin($event)->postJson(route('admin.scoring-method', $event), [
+            'scoring_method' => 'all',
+            'is_blind' => true,
+            'pass_count' => 3,
+        ])->assertOk();
+
+        $this->assertSame(90, $event->fresh()->default_score_percent);
+    }
+
     public function test_기본설정_화면에_설정_칸이_있다(): void
     {
         $event = Event::factory()->create(['default_score_percent' => 90]);
