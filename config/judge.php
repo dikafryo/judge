@@ -25,8 +25,8 @@ return [
     'play_tester_group' => env('JUDGE_PLAY_TESTER_GROUP', 'https://groups.google.com/g/judge-online'),
 
     // 테스터 등록(옵트인) 페이지 — PC·모바일 브라우저에서 연다
-    'play_opt_in_url' => env('JUDGE_PLAY_OPT_IN_URL', 'https://play.google.com/apps/testing/kr.iteach4u.app'),
+    'play_opt_in_url' => env('JUDGE_PLAY_OPT_IN_URL', 'https://play.google.com/apps/testing/kr.sw4u.judge_app'),
 
     // 등록을 마친 뒤 설치하는 스토어 페이지 — 안드로이드 기기에서 연다
-    'play_store_url' => env('JUDGE_PLAY_STORE_URL', 'https://play.google.com/store/apps/details?id=kr.iteach4u.app'),
+    'play_store_url' => env('JUDGE_PLAY_STORE_URL', 'https://play.google.com/store/apps/details?id=kr.sw4u.judge_app'),
 ];
