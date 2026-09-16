@@ -105,6 +105,25 @@ class SuperAdminTest extends TestCase
             ->assertOk();
     }
 
+    /**
+     * 목록은 통째로 한 폼이라 '들어가기' 를 눌러도 삭제용 입력이 함께 실려 온다.
+     * 전에 이 폼에 _method=DELETE 가 있어서 들어가기 요청까지 DELETE 로 바뀌어 405 가 났다.
+     */
+    public function test_들어가기는_삭제_폼의_입력이_함께_와도_동작한다(): void
+    {
+        $this->enable();
+        $other = Event::factory()->create();
+        $event = Event::factory()->create();
+
+        $this->signedIn()->post(route('root.enter', $event), [
+            'ids' => [$other->id],
+            'confirm' => '',
+        ])->assertRedirect(route('admin.dashboard', $event));
+
+        // 곁다리로 실려 온 ids 때문에 남의 행사가 지워지면 안 된다
+        $this->assertDatabaseHas('events', ['id' => $other->id]);
+    }
+
     public function test_고른_행사를_지운다(): void
     {
         $this->enable();
@@ -113,7 +132,7 @@ class SuperAdminTest extends TestCase
         Candidate::factory()->for($doomed)->create();
 
         $this->signedIn()
-            ->delete('/root', ['ids' => [$doomed->id], 'confirm' => '삭제'])
+            ->post(route('root.destroy'), ['ids' => [$doomed->id], 'confirm' => '삭제'])
             ->assertRedirect(route('root.index'));
 
         $this->assertDatabaseMissing('events', ['id' => $doomed->id]);
@@ -127,7 +146,7 @@ class SuperAdminTest extends TestCase
         $event = Event::factory()->create();
 
         $this->signedIn()
-            ->delete('/root', ['ids' => [$event->id], 'confirm' => '지워'])
+            ->post(route('root.destroy'), ['ids' => [$event->id], 'confirm' => '지워'])
             ->assertSessionHasErrors('confirm');
 
         $this->assertDatabaseHas('events', ['id' => $event->id]);
@@ -139,7 +158,7 @@ class SuperAdminTest extends TestCase
         $this->enable();
         $demo = Event::factory()->create(['name' => '샘플', 'is_demo' => true]);
 
-        $this->signedIn()->delete('/root', ['ids' => [$demo->id], 'confirm' => '삭제']);
+        $this->signedIn()->post(route('root.destroy'), ['ids' => [$demo->id], 'confirm' => '삭제']);
 
         $this->assertDatabaseHas('events', ['id' => $demo->id]);
     }
@@ -149,7 +168,7 @@ class SuperAdminTest extends TestCase
         $this->enable();
         $event = Event::factory()->create();
 
-        $this->delete('/root', ['ids' => [$event->id], 'confirm' => '삭제'])
+        $this->post(route('root.destroy'), ['ids' => [$event->id], 'confirm' => '삭제'])
             ->assertRedirect(route('root.login'));
 
         $this->assertDatabaseHas('events', ['id' => $event->id]);

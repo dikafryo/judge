@@ -93,7 +93,10 @@ Route::prefix('root')->group(function () {
     Route::middleware('super.admin')->group(function () {
         Route::get('/', [RootController::class, 'index'])->name('root.index');
         Route::post('/{event}/enter', [RootController::class, 'enter'])->name('root.enter');
-        Route::delete('/', [RootController::class, 'destroy'])->name('root.destroy');
+        // 삭제도 POST 다. 목록 전체가 한 폼이고 그 안에 '들어가기' 버튼이 함께 있는데,
+        // @method('DELETE') 를 쓰면 숨은 _method 가 들어가기 요청까지 DELETE 로 바꿔
+        // 405 가 난다. 한 폼 안의 두 목적지는 같은 메서드여야 한다.
+        Route::post('/delete', [RootController::class, 'destroy'])->name('root.destroy');
     });
 });
 

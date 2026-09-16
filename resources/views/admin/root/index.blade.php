@@ -15,9 +15,18 @@
     목록 전체가 하나의 폼이다. 지울 것을 고르고 아래에서 한 번에 보낸다.
     행사마다 따로 지우게 하면 수십 개를 치우는 일이 불가능해져 아무도 치우지 않는다.
 --}}
-<form method="POST" action="{{ route('root.destroy') }}" x-data="rootPurge()">
+@php
+    // 비어 있는 행사 = 대상·항목·심사위원이 모두 0. 만들다 만 테스트 행사가 대부분 이 모습이다.
+    $isEmpty = fn ($event) => $event->candidates_count === 0
+        && $event->criteria_count === 0
+        && $event->judges_count === 0;
+
+    $emptyIds = $events->reject->is_demo->filter($isEmpty)->pluck('id')->values();
+@endphp
+
+<form method="POST" action="{{ route('root.destroy') }}"
+      x-data="{ selected: [], confirm: '', empties: @js($emptyIds) }">
     @csrf
-    @method('DELETE')
 
     <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -30,7 +39,7 @@
             </p>
         </div>
         @if ($emptyCount > 0)
-            <button type="button" x-on:click="selectEmpty()"
+            <button type="button" x-on:click="selected = [...empties]"
                     class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                 비어 있는 행사 모두 선택
             </button>
@@ -44,16 +53,12 @@
     @else
         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             @foreach ($events as $event)
-                @php
-                    $isEmpty = $event->candidates_count === 0
-                        && $event->criteria_count === 0
-                        && $event->judges_count === 0;
-                @endphp
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:px-5">
                     <label class="flex cursor-pointer items-center">
+                        {{-- 고른 것을 Alpine 배열에 그대로 모은다. DOM 을 뒤져 세면
+                             '모두 선택' 같은 조작 뒤에 숫자가 어긋난다. --}}
                         <input type="checkbox" name="ids[]" value="{{ $event->id }}"
-                               data-empty="{{ $isEmpty ? '1' : '0' }}"
-                               x-on:change="count()"
+                               x-model.number="selected"
                                @disabled($event->is_demo)
                                class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500 disabled:opacity-30">
                     </label>
@@ -66,7 +71,7 @@
                             @elseif (! $event->is_open)
                                 <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">마감</span>
                             @endif
-                            @if ($isEmpty && ! $event->is_demo)
+                            @if ($isEmpty($event) && ! $event->is_demo)
                                 <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">비어 있음</span>
                             @endif
                         </div>
@@ -77,7 +82,7 @@
                     </div>
 
                     {{-- 들어가기는 삭제 폼 안에 둘 수 없다(중첩 form 금지). formaction 으로 목적지만 바꾼다. --}}
-                    <button type="submit" formmethod="POST" formaction="{{ route('root.enter', $event) }}"
+                    <button type="submit" formaction="{{ route('root.enter', $event) }}"
                             class="rounded-lg border border-slate-300 px-3.5 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                         들어가기
                     </button>
@@ -98,38 +103,13 @@
                            class="ml-2 w-28 rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-400">
                 </label>
                 <button type="submit"
-                        x-bind:disabled="selected === 0 || confirm.trim() !== '삭제'"
+                        x-bind:disabled="selected.length === 0 || confirm.trim() !== '삭제'"
                         class="rounded-lg bg-rose-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300">
-                    <span x-text="selected === 0 ? '선택한 행사 삭제' : selected + '개 행사 삭제'"></span>
+                    <span x-text="selected.length === 0 ? '선택한 행사 삭제' : selected.length + '개 행사 삭제'"></span>
                 </button>
             </div>
         </div>
     @endif
 </form>
-
-@push('scripts')
-<script>
-    function rootPurge() {
-        return {
-            selected: 0,
-            confirm: '',
-
-            boxes() {
-                return Array.from(this.$el.querySelectorAll('input[name="ids[]"]:not(:disabled)'));
-            },
-
-            count() {
-                this.selected = this.boxes().filter(box => box.checked).length;
-            },
-
-            // 만들다 만 테스트 행사가 대부분 이 모습이라, 한 번에 고를 수 있게 한다
-            selectEmpty() {
-                this.boxes().forEach(box => { box.checked = box.dataset.empty === '1'; });
-                this.count();
-            },
-        };
-    }
-</script>
-@endpush
 
 @endsection
