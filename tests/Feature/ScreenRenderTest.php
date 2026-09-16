@@ -123,6 +123,32 @@ class ScreenRenderTest extends TestCase
         $this->assertStringContainsString('<noscript>', $html);
     }
 
+    public function test_앱_받기_화면이_두_가지_방법을_모두_안내한다(): void
+    {
+        $html = $this->get(route('app.download'))->assertOk()->getContent();
+
+        // 플레이스토어 3단계 — 순서를 지키지 않으면 앱이 보이지 않아 대부분 여기서 막힌다
+        $this->assertStringContainsString(config('judge.play_tester_group'), $html);
+        $this->assertStringContainsString(config('judge.play_opt_in_url'), $html);
+        $this->assertStringContainsString(config('judge.play_store_url'), $html);
+
+        // APK 직접 받기도 남아 있어야 한다
+        $this->assertStringContainsString('앱 내려받기', $html);
+        $this->assertStringContainsString('방법 1', $html);
+        $this->assertStringContainsString('방법 2', $html);
+    }
+
+    /** 링크가 설정되지 않은 곳에서는 반쪽짜리 절차를 보여 주느니 통째로 감춘다. */
+    public function test_플레이_링크가_없으면_안내를_감춘다(): void
+    {
+        config(['judge.play_tester_group' => '']);
+
+        $html = $this->get(route('app.download'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('방법 1', $html);
+        $this->assertStringContainsString('앱 내려받기', $html);
+    }
+
     public function test_심사위원_접속안내도_화면에서_실제_용지_크기로_보인다(): void
     {
         $event = $this->fullEvent();

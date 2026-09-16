@@ -19,19 +19,111 @@
         </p>
     </div>
 
-    @if (! $release)
-        <div class="mt-8 rounded-2xl border border-slate-200 bg-white p-8 text-center">
-            <p class="text-slate-600">아직 게시된 앱이 없습니다.</p>
-            <p class="mt-2 text-sm text-slate-400">
+    {{-- 받는 길이 둘이다. 어느 쪽이든 같은 앱이므로, 고르기 전에 그 사실을 먼저 말한다. --}}
+    @if ($play)
+        <p class="mt-8 text-center text-sm text-slate-500">
+            받는 방법은 두 가지이고 <strong class="text-slate-700">설치되는 앱은 같습니다.</strong>
+            편한 쪽을 고르세요.
+        </p>
+
+        {{--
+            방법 1 — 플레이스토어 비공개 테스트.
+            아직 공개 출시 전이라 누구나 받을 수는 없고, 구글 그룹스에 가입한 계정만
+            스토어에서 앱이 보인다. 순서를 지키지 않으면 "찾을 수 없는 페이지" 가 떠서
+            대부분 여기서 막힌다 — 그래서 번호를 붙여 차례를 못 박는다.
+        --}}
+        <section class="mt-4 rounded-2xl border-2 border-indigo-200 bg-white p-6 sm:p-8">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="rounded-full bg-indigo-600 px-2.5 py-1 text-xs font-bold text-white">방법 1</span>
+                <h2 class="text-lg font-bold text-slate-900">플레이스토어에서 받기</h2>
+                <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">권장</span>
+            </div>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                스토어를 거치므로 설치할 때 보안 경고가 뜨지 않고, 새 버전이 나오면 자동으로 갱신됩니다.
+                아직 공개 출시 전이라 <strong>아래 세 단계를 순서대로</strong> 밟아야 합니다.
+            </p>
+
+            <ol class="mt-6 space-y-5">
+                <li class="flex gap-4">
+                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">1</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-bold text-slate-800">구글 그룹스에 가입합니다</p>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-500">
+                            테스터 명단 역할을 합니다. <strong>가입한 구글 계정</strong>으로만 앱이 보이므로,
+                            폰에서 쓰는 계정으로 가입하세요.
+                        </p>
+                        <a href="{{ $play['group'] }}" target="_blank" rel="noopener"
+                           class="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                            그룹 가입하기
+                            <span aria-hidden="true" class="text-slate-400">↗</span>
+                        </a>
+                    </div>
+                </li>
+
+                <li class="flex gap-4">
+                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">2</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-bold text-slate-800">테스터로 등록합니다</p>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-500">
+                            열린 페이지에서 <strong>테스터 되기</strong>를 누릅니다. PC·폰 어느 브라우저에서나 됩니다.
+                        </p>
+                        <a href="{{ $play['optIn'] }}" target="_blank" rel="noopener"
+                           class="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                            테스터 등록하기
+                            <span aria-hidden="true" class="text-slate-400">↗</span>
+                        </a>
+                    </div>
+                </li>
+
+                <li class="flex gap-4">
+                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">3</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-bold text-slate-800">안드로이드 기기에서 설치합니다</p>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-500">
+                            1·2 단계를 마친 계정이 로그인된 <strong>안드로이드 기기</strong>에서 열어야 합니다.
+                        </p>
+                        <a href="{{ $play['store'] }}" target="_blank" rel="noopener"
+                           class="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-base font-bold text-white transition hover:bg-indigo-700 sm:w-auto">
+                            플레이스토어에서 설치
+                            <span aria-hidden="true">↗</span>
+                        </a>
+                    </div>
+                </li>
+            </ol>
+
+            <div class="mt-6 rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-600">
+                <p class="font-bold text-slate-700">앱을 찾을 수 없다고 나온다면</p>
+                <ul class="mt-1.5 list-disc space-y-1 pl-5">
+                    <li>1·2 단계를 마친 계정으로 로그인되어 있는지 확인하세요. 폰에 계정이 여러 개면 자주 생기는 일입니다.</li>
+                    <li>등록 직후에는 몇 분에서 길게는 몇 시간이 걸릴 수 있습니다. 시간을 두고 다시 열어 보세요.</li>
+                    <li>그래도 안 되면 아래 <strong>방법 2</strong> 로 바로 받으실 수 있습니다.</li>
+                </ul>
+            </div>
+        </section>
+    @endif
+
+    {{-- 방법 2 — APK 직접 배포. 플레이 등록을 기다릴 수 없는 현장을 위한 길이다. --}}
+    <section class="mt-4 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+        @if ($play)
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-bold text-slate-700">방법 2</span>
+                <h2 class="text-lg font-bold text-slate-900">파일로 바로 받기</h2>
+            </div>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                그룹 가입 없이 지금 바로 설치합니다. 대신 새 버전은 이 페이지에서 직접 받아야 합니다.
+            </p>
+        @endif
+
+        @if (! $release)
+            <p class="{{ $play ? 'mt-6 ' : '' }}text-center text-slate-600">아직 게시된 앱 파일이 없습니다.</p>
+            <p class="mt-2 text-center text-sm text-slate-400">
                 앱 없이도 브라우저에서 바로 쓰실 수 있습니다 — 크롬 메뉴의 <strong>앱 설치</strong>를 눌러 주세요.
             </p>
-        </div>
-    @else
-        <div class="mt-8 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-            <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+        @else
+            <div class="{{ $play ? 'mt-6 ' : '' }}flex flex-col items-center gap-6 sm:flex-row sm:items-center">
                 <div class="min-w-0 flex-1 text-center sm:text-left">
                     <a href="/{{ $release['apk'] }}"
-                       class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-6 py-4 text-base font-bold text-white transition hover:bg-indigo-700 sm:w-auto">
+                       class="inline-flex w-full items-center justify-center rounded-xl bg-slate-800 px-6 py-3.5 text-base font-bold text-white transition hover:bg-slate-900 sm:w-auto">
                         ⤓ 앱 내려받기
                     </a>
                     <p class="mt-3 text-sm text-slate-500">
@@ -61,20 +153,20 @@
                     <p class="mt-1 break-all font-mono text-[11px] leading-relaxed text-slate-400">{{ $release['sha256'] }}</p>
                 </div>
             @endif
-        </div>
 
-        <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-            <p class="font-bold">설치할 때 경고가 뜨는 것은 정상입니다</p>
-            <p class="mt-1.5 leading-relaxed">
-                구글 플레이를 거치지 않고 저희가 직접 배포하는 파일이라, 안드로이드가 보안 확인을 표시합니다.
-            </p>
-            <ol class="mt-3 list-decimal space-y-1 pl-5">
-                <li>위 버튼으로 파일을 받습니다.</li>
-                <li>브라우저가 물어보면 <strong>이 출처의 앱 설치를 허용</strong>합니다.</li>
-                <li>받은 파일을 눌러 <strong>설치</strong>합니다.</li>
-            </ol>
-        </div>
-    @endif
+            <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+                <p class="font-bold">설치할 때 경고가 뜨는 것은 정상입니다</p>
+                <p class="mt-1.5 leading-relaxed">
+                    구글 플레이를 거치지 않고 저희가 직접 배포하는 파일이라, 안드로이드가 보안 확인을 표시합니다.
+                </p>
+                <ol class="mt-3 list-decimal space-y-1 pl-5">
+                    <li>위 버튼으로 파일을 받습니다.</li>
+                    <li>브라우저가 물어보면 <strong>이 출처의 앱 설치를 허용</strong>합니다.</li>
+                    <li>받은 파일을 눌러 <strong>설치</strong>합니다.</li>
+                </ol>
+            </div>
+        @endif
+    </section>
 
     <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
         <p class="font-bold text-slate-800">아이폰·아이패드를 쓰신다면</p>
