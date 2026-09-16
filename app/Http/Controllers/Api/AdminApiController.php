@@ -54,6 +54,7 @@ class AdminApiController extends Controller
             'scoring_method' => $event->scoring_method,
             'scoring_note' => $event->scoringMethodNote(),
             'pass_count' => $event->pass_count,
+            'default_score_percent' => $event->default_score_percent,
             'show_judge_signs' => $event->show_judge_signs,
             'report_signers' => $event->report_signers ?? [],
         ]);

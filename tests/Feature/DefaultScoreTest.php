@@ -123,6 +123,18 @@ class DefaultScoreTest extends TestCase
         $this->assertSame(90, $event->fresh()->default_score_percent);
     }
 
+    /** 앱 관리 탭이 현재 값을 보여 주려면 행사 정보에 실려 있어야 한다. */
+    public function test_앱_행사_정보에_실린다(): void
+    {
+        $event = Event::factory()->create(['default_score_percent' => 90, 'admin_password' => bcrypt('pw')]);
+
+        $token = $event->createToken('admin')->plainTextToken;
+
+        $this->withToken($token)->getJson('/api/v1/admin/event')
+            ->assertOk()
+            ->assertJsonPath('default_score_percent', 90);
+    }
+
     public function test_기본설정_화면에_설정_칸이_있다(): void
     {
         $event = Event::factory()->create(['default_score_percent' => 90]);
