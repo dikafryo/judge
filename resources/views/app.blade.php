@@ -14,9 +14,26 @@
         <img src="/icons/icon-192.png" alt="" width="72" height="72" class="mx-auto rounded-2xl shadow-sm">
         <h1 class="mt-4 text-3xl font-bold text-slate-900">안드로이드 앱</h1>
         <p class="mt-2 text-slate-500">
-            심사위원용 앱입니다. 설치하면 주소창 없이 전체화면으로 열리고,<br class="hidden sm:inline">
-            인터넷이 끊겨도 점수를 이어서 넣을 수 있습니다.
+            심사위원 채점과 주최자 관리를 한 앱에서 합니다.<br class="hidden sm:inline">
+            주소창 없이 전체화면으로 열리고, 인터넷이 끊겨도 점수를 이어서 넣을 수 있습니다.
         </p>
+
+        {{-- 앱이 심사위원 전용이라는 오해가 있었다. 무엇을 할 수 있는지 먼저 밝힌다. --}}
+        <div class="mt-6 grid gap-3 text-left sm:grid-cols-2">
+            <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <p class="text-sm font-bold text-slate-800">심사위원</p>
+                <p class="mt-1 text-sm leading-relaxed text-slate-500">
+                    6자리 코드나 QR 로 들어와 채점하고 서명합니다. 오프라인에서도 멈추지 않습니다.
+                </p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <p class="text-sm font-bold text-slate-800">주최자</p>
+                <p class="mt-1 text-sm leading-relaxed text-slate-500">
+                    행사 만들기, 평가 항목·대상·심사위원 등록, 집계 확인, 기본설정까지 앱에서 합니다.
+                    인쇄물은 앱에서 눌러 브라우저로 넘어갑니다.
+                </p>
+            </div>
+        </div>
     </div>
 
     {{-- 받는 길이 둘이다. 어느 쪽이든 같은 앱이므로, 고르기 전에 그 사실을 먼저 말한다. --}}

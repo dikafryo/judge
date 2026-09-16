@@ -184,6 +184,7 @@
                             <li><strong>안드로이드</strong>: <a href="{{ route('app.download') }}" class="text-indigo-600 underline">앱 내려받기</a> 페이지에서 설치 (권장) 또는 헤더 우측 <strong>⤓</strong> 버튼.</li>
                             <li><strong>아이폰</strong>: 사파리 아래 <strong>공유</strong> → <strong>홈 화면에 추가</strong>.</li>
                             <li>홈 화면 아이콘으로 열면 주소창 없이 전체화면으로 실행되고, 매번 코드를 다시 입력하지 않아도 됩니다.</li>
+                            <li>안드로이드 앱은 <strong>심사위원 채점과 주최자 관리를 모두</strong> 지원합니다. 행사·항목·대상·심사위원 등록과 집계 확인을 앱에서 할 수 있습니다.</li>
                         </ul>
                     </section>
                     @endunless
@@ -216,7 +217,8 @@
                         <div class="font-bold text-slate-700 mb-1">Q. 앱처럼 설치해서 쓸 수 있나요?</div>
                         <p>네. 안드로이드는 <a href="{{ route('app.download') }}" class="text-indigo-600 underline">앱 내려받기</a> 페이지에서
                            설치 파일을 받으실 수 있고, 헤더 우측 <strong>⤓</strong> 버튼으로 브라우저에서 바로 설치해도 됩니다.
-                           아이폰은 사파리 <strong>공유 → 홈 화면에 추가</strong>입니다. 앱스토어 등록은 하지 않았습니다.</p>
+                           구글 플레이스토어에서도 받을 수 있습니다(비공개 테스트 — 받는 방법은 <a href="{{ route('app.download') }}" class="text-indigo-600 underline">앱 내려받기</a> 페이지에 있습니다).
+                           아이폰은 사파리 <strong>공유 → 홈 화면에 추가</strong>이며, 앱스토어 등록은 하지 않았습니다.</p>
                     </div>
                     <div class="rounded-xl border border-slate-200 p-4">
                         <div class="font-bold text-slate-700 mb-1">Q. 관리 비밀번호를 잊어버렸어요.</div>
