@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\RootController;
 use App\Http\Controllers\Admin\SetupController;
 use App\Http\Controllers\AppDownloadController;
 use App\Http\Controllers\DemoController;
@@ -71,6 +72,29 @@ Route::prefix('judge/{judge:code}')->middleware('demo.readonly')->group(function
     Route::post('/scores', [JudgeController::class, 'storeScores'])->name('judge.scores');       // AJAX
     Route::post('/signature', [JudgeController::class, 'storeSignature'])->name('judge.signature'); // AJAX
     Route::get('/print', [JudgeController::class, 'print'])->name('judge.print');                // 인쇄용 심사표
+});
+
+/*
+|--------------------------------------------------------------------------
+| 전체 관리자 — 모든 행사를 보고 정리한다
+|--------------------------------------------------------------------------
+| 행사마다 비밀번호가 따로라, 만든 사람이 잊으면 아무도 지울 수 없는 행사가 남는다.
+| 그것을 치우기 위한 열쇠 하나. config/judge.php 의 비밀번호를 비우면 전부 404 다.
+|
+| 로그인은 대입이 가능하므로 심사위원 입장과 같은 제한을 건다.
+*/
+Route::prefix('root')->group(function () {
+    Route::get('/login', [RootController::class, 'showLogin'])->name('root.login');
+    Route::post('/login', [RootController::class, 'login'])
+        ->middleware('throttle:5,1')
+        ->name('root.login.post');
+    Route::post('/logout', [RootController::class, 'logout'])->name('root.logout');
+
+    Route::middleware('super.admin')->group(function () {
+        Route::get('/', [RootController::class, 'index'])->name('root.index');
+        Route::post('/{event}/enter', [RootController::class, 'enter'])->name('root.enter');
+        Route::delete('/', [RootController::class, 'destroy'])->name('root.destroy');
+    });
 });
 
 /*

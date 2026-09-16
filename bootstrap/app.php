@@ -6,6 +6,7 @@ use App\Http\Middleware\BlockDemoWrites;
 use App\Http\Middleware\EnsureApiEventWritable;
 use App\Http\Middleware\EnsureEventAdmin;
 use App\Http\Middleware\EnsureEventOpen;
+use App\Http\Middleware\EnsureSuperAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // 행사별 관리자 세션 미들웨어 별칭
         $middleware->alias([
             'event.admin' => EnsureEventAdmin::class,
+            'super.admin' => EnsureSuperAdmin::class,
             'event.open' => EnsureEventOpen::class,
             'demo.readonly' => BlockDemoWrites::class,
 

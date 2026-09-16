@@ -254,6 +254,25 @@ class EventSetup
             throw new SetupRejected('행사명이 일치하지 않아 삭제가 취소되었습니다.', 'confirm_name');
         }
 
+        return $this->purgeEvent($event);
+    }
+
+    /**
+     * 행사명 확인 없이 지운다. 전체 관리자 전용이다.
+     *
+     * 행사별 비밀번호를 모르는 사람이 지우는 경로이므로, 무엇을 지웠는지 이름을 돌려준다.
+     * 체험용 샘플은 /demo 가 딛고 서 있어 지우면 공개 페이지가 깨진다 — 여기서 막는다.
+     *
+     * @throws SetupRejected
+     */
+    public function purgeEvent(Event $event): string
+    {
+        if ($event->is_demo) {
+            throw new SetupRejected('체험용 샘플 행사는 삭제할 수 없습니다.', 'event');
+        }
+
+        $name = $event->name;
+
         DB::transaction(function () use ($event): void {
             $event->judges()->get()->each(fn (Judge $judge) => $judge->tokens()->delete());
             $event->tokens()->delete();
