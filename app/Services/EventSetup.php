@@ -175,6 +175,7 @@ class EventSetup
             'scoring_method' => $data['scoring_method'],
             'is_blind' => $data['is_blind'],
             'pass_count' => $data['pass_count'] ?? null,
+            'default_score_percent' => $data['default_score_percent'] ?? null,
         ]);
     }
 

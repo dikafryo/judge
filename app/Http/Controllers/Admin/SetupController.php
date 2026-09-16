@@ -152,6 +152,7 @@ class SetupController extends Controller
                 'scoring_method' => $event->scoring_method,
                 'is_blind' => $event->is_blind,
                 'pass_count' => $event->pass_count,
+                'default_score_percent' => $event->default_score_percent,
             ]);
         }
 
@@ -173,7 +174,11 @@ class SetupController extends Controller
             ? " 선정자(선정기관) 수: {$event->pass_count}곳 — 집계 화면에 상위 {$event->pass_count}곳이 선정으로 표시됩니다."
             : ' 선정자 수는 미지정입니다.';
 
-        return $method.$blind.$pass;
+        $default = $event->default_score_percent === null
+            ? ' 심사 기본점수는 사용하지 않습니다.'
+            : " 심사 기본점수: 각 평가 항목 만점의 {$event->default_score_percent}% 가 심사위원 화면에 미리 채워집니다.";
+
+        return $method.$blind.$default.$pass;
     }
 
     /**

@@ -20,7 +20,8 @@ class JudgePayloadService
     /**
      * @return array{
      *     judge: array, event: array, groups: array, candidates: array,
-     *     scores: array, hasSignature: bool, totalMax: int
+     *     scores: array, hasSignature: bool, totalMax: int,
+     *     defaultScorePercent: int|null
      * }
      */
     public function build(Judge $judge, Event $event): array
@@ -32,6 +33,8 @@ class JudgePayloadService
                 'is_open' => $event->is_open,
                 'is_blind' => $event->is_blind,
             ],
+            // 아직 채점하지 않은 항목을 만점의 몇 %로 미리 채울지. null 이면 빈칸으로 둔다.
+            'defaultScorePercent' => $event->default_score_percent,
             'groups' => $this->groups($event),
             'candidates' => $this->candidates($event),
             'scores' => $this->scores($judge),

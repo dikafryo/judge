@@ -25,7 +25,7 @@ class Event extends Model implements AuthenticatableContract
     use HasApiTokens;
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'event_date', 'admin_password', 'is_open', 'is_demo', 'scoring_method', 'pass_count', 'is_blind', 'report_signers', 'show_judge_signs'];
+    protected $fillable = ['name', 'description', 'event_date', 'admin_password', 'is_open', 'is_demo', 'scoring_method', 'pass_count', 'is_blind', 'default_score_percent', 'report_signers', 'show_judge_signs'];
 
     /**
      * 체험용 샘플을 뺀 실제 행사만.
@@ -34,6 +34,19 @@ class Event extends Model implements AuthenticatableContract
     public function scopeReal(Builder $query): Builder
     {
         return $query->where('is_demo', false);
+    }
+
+    /**
+     * 심사위원 화면에 미리 채워 둘 점수 — 평가항목 만점의 default_score_percent %.
+     * 입력 단위가 0.5점이라 0.5 단위로 맞춘다. 미사용이면 null 을 돌려준다.
+     */
+    public function defaultScoreFor(int $maxScore): ?float
+    {
+        if ($this->default_score_percent === null) {
+            return null;
+        }
+
+        return round($maxScore * $this->default_score_percent / 100 * 2) / 2;
     }
 
     /** 집계 방식 안내문 (대시보드·최종집계표 ※ 표기용) */
@@ -53,6 +66,7 @@ class Event extends Model implements AuthenticatableContract
             'is_open' => 'boolean',
             'is_demo' => 'boolean',
             'is_blind' => 'boolean',
+            'default_score_percent' => 'integer',
             'report_signers' => 'array',
             'show_judge_signs' => 'boolean',
         ];

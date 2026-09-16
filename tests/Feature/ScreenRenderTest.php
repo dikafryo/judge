@@ -115,8 +115,8 @@ class ScreenRenderTest extends TestCase
         $withoutNoscript = preg_replace('/<noscript>.*?<\/noscript>/s', '', $html);
         $this->assertSame(1, substr_count($withoutNoscript, '>저장</button>'));
 
-        // 세 그룹 각각에 저장 상태 표시가 붙어 있다
-        $this->assertSame(3, substr_count($html, 'role="status"'));
+        // 네 그룹(집계 방식·심사위원 화면·심사 기본점수·선정자 수) 각각에 저장 상태 표시가 붙어 있다
+        $this->assertSame(4, substr_count($html, 'role="status"'));
         $this->assertStringContainsString('저장되었습니다', $html);
 
         // JS 가 죽어도 저장할 수단은 남겨 둔다

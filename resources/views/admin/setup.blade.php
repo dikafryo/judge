@@ -15,6 +15,7 @@
          x-data="scoringSetup({
              method: @js($event->scoring_method),
              blind: @js($event->is_blind ? '1' : '0'),
+             defaultScore: @js($event->default_score_percent === null ? '' : (string) $event->default_score_percent),
              pass: @js((string) $event->pass_count),
              isOpen: @js($event->is_open),
              hasScores: @js($hasScores),
@@ -53,6 +54,25 @@
                 평가 대상 이름 공개
             </label>
             <x-admin.save-state group="blind" :undo="true" />
+        </div>
+
+        {{-- 심사 기본점수 — 심사위원 화면을 열었을 때 미리 채워 둘 점수 --}}
+        <div class="w-full flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 border-t border-slate-100">
+            <label class="flex items-center gap-2 text-sm">
+                <span class="font-bold">심사 기본점수</span>
+                {{-- 숫자는 다 입력한 뒤에 저장한다 — 칸을 벗어나거나 Enter 를 칠 때 --}}
+                <input type="number" name="default_score_percent" min="0" max="100" step="1" @disabled(! $event->is_open)
+                       x-model="defaultScore" x-on:blur="save('defaultScore')" x-on:keydown.enter.prevent="save('defaultScore')"
+                       placeholder="미사용"
+                       class="w-24 rounded-lg border-slate-300 border px-3 py-1.5 text-sm text-right outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400">
+                <span class="text-xs text-slate-400">%</span>
+            </label>
+            <x-admin.save-state group="defaultScore" />
+            <p class="w-full text-xs text-slate-400">
+                심사위원이 화면을 열면 각 평가 항목 <strong>만점의 이 비율</strong>만큼 점수가 미리 입력되어 있고, 위아래로 조정해 제출합니다.
+                예를 들어 <strong>90</strong>이면 20점짜리 항목에 18점이 채워집니다.
+                이미 입력한 점수가 있으면 그 점수가 그대로 남습니다. 비워 두면 채우지 않습니다.
+            </p>
         </div>
 
         {{-- 선정자 수 --}}
@@ -177,11 +197,12 @@
         return {
             method: initial.method,
             blind: initial.blind,
+            defaultScore: initial.defaultScore,
             pass: initial.pass,
             isOpen: initial.isOpen,
             hasScores: initial.hasScores,
 
-            state: { method: 'idle', blind: 'idle', pass: 'idle' },
+            state: { method: 'idle', blind: 'idle', defaultScore: 'idle', pass: 'idle' },
             undoable: { method: null, blind: null },   // 직전 값 — 되돌리기용
             detail: '',                                 // 스크린리더에 읽어 줄 전체 문장
             saved: null,                                // 마지막으로 저장에 성공한 값
@@ -192,7 +213,7 @@
             },
 
             snapshot() {
-                return { method: this.method, blind: this.blind, pass: this.pass };
+                return { method: this.method, blind: this.blind, defaultScore: this.defaultScore, pass: this.pass };
             },
 
             /**
@@ -234,6 +255,7 @@
                             scoring_method: next.method,
                             is_blind: next.blind === '1',
                             pass_count: next.pass === '' ? null : next.pass,
+                            default_score_percent: next.defaultScore === '' ? null : next.defaultScore,
                         }),
                     });
 
@@ -246,6 +268,7 @@
                     this.method = data.scoring_method;
                     this.blind = data.is_blind ? '1' : '0';
                     this.pass = data.pass_count === null ? '' : String(data.pass_count);
+                    this.defaultScore = data.default_score_percent === null ? '' : String(data.default_score_percent);
                     this.detail = data.detail ?? '';
                     this.saved = this.snapshot();
 

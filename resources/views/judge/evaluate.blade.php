@@ -386,6 +386,17 @@
                 this.drawerOpen = false;
             },
 
+            /**
+             * 심사 기본점수 — 관리자가 정한 비율로 미리 채워 둘 점수.
+             * 입력 단위가 0.5점이라 0.5 단위로 맞춘다. 미사용이면 null.
+             */
+            defaultFor(cr) {
+                const pct = PAYLOAD.defaultScorePercent;
+                if (pct === null || pct === undefined) return null;
+
+                return Math.round(cr.max_score * pct / 100 * 2) / 2;
+            },
+
             loadDraft() {
                 const saved = this.saved[this.selectedId] ?? {};
                 const local = this.drafts[this.selectedId] ?? null;
@@ -393,7 +404,13 @@
                 this.criteria.forEach(cr => {
                     // 제출 전 입력값이 남아 있으면 그쪽이 최신이다
                     const kept = local ? local[cr.id] : undefined;
-                    this.draft[cr.id] = kept !== undefined ? kept : (saved[cr.id] ?? null);
+                    if (kept !== undefined) {
+                        this.draft[cr.id] = kept;
+                        return;
+                    }
+
+                    // 채점한 적 없는 항목만 기본점수로 채운다 — 이미 낸 점수를 덮으면 안 된다
+                    this.draft[cr.id] = saved[cr.id] ?? this.defaultFor(cr);
                 });
             },
 
