@@ -259,7 +259,6 @@ php artisan judge:demo
 | `public/sw.js` | 서비스워커. 앱 셸·CDN 자산 캐시 + 심사위원 화면 오프라인 폴백 |
 | `public/offline.html` | 네트워크가 없고 캐시에도 없을 때 보여주는 안내 화면 (CSS 인라인) |
 | `public/icons/*.png` | 앱 아이콘 6종 |
-| `tools/make-icons.php` | 아이콘 생성기 — `php tools/make-icons.php` |
 
 ### 설치 조건
 
@@ -293,8 +292,6 @@ curl -sI https://<도메인>/sw.js           # → 200 / application/javascript
 > 4시간(`max-age=14400`) 묶입니다. `sw.js` 와 `downloads/judge-latest.apk` 는 이름이 그대로인 채
 > 내용만 바뀌므로, nginx 에서 `Cache-Control: no-cache` 를 붙여 매번 검증하게 해 두었습니다
 > (`sw4u.kr.conf` 의 judge 블록). 버전이 이름에 박힌 APK 는 불변이라 그대로 캐시해도 됩니다.
-
-아이콘 색·형태를 바꾸려면 `tools/make-icons.php` 상단의 색 상수를 고치고 다시 실행하면 됩니다.
 
 ### 안드로이드 앱 (APK)
 
