@@ -95,7 +95,7 @@
     </main>
 
     {{-- 개인정보처리방침은 플레이스토어 심사에서 확인하는 공개 문서다 — 모든 화면에서 닿아야 한다 --}}
-    <footer class="max-w-6xl mx-auto px-4 py-8 text-center text-xs text-slate-400">
+    <footer class="max-w-6xl mx-auto px-4 py-8 text-center text-xs text-slate-500">
         <span class="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             <span>온라인 심사 시스템</span>
             <span aria-hidden="true">·</span>

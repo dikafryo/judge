@@ -16,7 +16,7 @@
     <div>
         <h1 class="text-2xl font-bold text-slate-900">행사 관리</h1>
         <p class="mt-1 text-sm text-slate-500">행사를 클릭하면 해당 행사 설정으로 이동합니다. (관리 비밀번호 필요)</p>
-        <p class="mt-1 text-xs text-amber-600 flex items-center gap-1"><span class="material-symbols-rounded align-[-3px] text-[16px] leading-none" aria-hidden="true">warning</span> 행사일(미지정 시 등록일) 기준 30일이 지나면 자동 삭제됩니다. <strong>마감 처리한 행사는 2년간 보관</strong>되니, 보관할 행사는 꼭 마감하세요.</p>
+        <p class="mt-1 text-xs text-amber-800 flex items-start gap-1"><span class="material-symbols-rounded text-[16px] leading-none mt-px" aria-hidden="true">warning</span><span>행사일(미지정 시 등록일) 기준 30일이 지나면 자동 삭제됩니다. <strong>마감 처리한 행사는 2년간 보관</strong>되니, 보관할 행사는 꼭 마감하세요.</span></p>
     </div>
     <button type="button" x-on:click="createOpen = !createOpen"
             class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-semibold transition">＋ 새 행사 만들기</button>
@@ -65,7 +65,7 @@
             행사 만들기
         </button>
     </form>
-    <p class="mt-3 text-xs text-slate-400">※ 비밀번호는 행사 관리(대상·항목·심사위원 등록, 대시보드)에 사용됩니다. 분실 시 복구할 수 없으니 꼭 기억해 두세요.</p>
+    <p class="mt-3 text-xs text-amber-800">※ 비밀번호는 행사 관리(대상·항목·심사위원 등록, 대시보드)에 사용됩니다. 분실 시 복구할 수 없으니 꼭 기억해 두세요.</p>
 </section>
 
 {{-- 모바일 카드 목록 (sm 미만) — 좁은 화면에서 표를 가로 스크롤하지 않도록 카드로 재구성 --}}
@@ -84,7 +84,7 @@
                         <span class="material-symbols-rounded text-[12px] leading-none" aria-hidden="true">lock</span>마감
                     </span>
                 @endif
-                <span class="text-xs text-slate-400">{{ $event->event_date?->format('Y-m-d') ?? '행사일 미지정' }}</span>
+                <span class="text-xs text-slate-500">{{ $event->event_date?->format('Y-m-d') ?? '행사일 미지정' }}</span>
             </div>
             <div class="mt-3 grid grid-cols-3 gap-2">
                 <div class="rounded-xl bg-sky-50 p-2 text-center">
@@ -102,7 +102,7 @@
             </div>
         </a>
     @empty
-        <div class="rounded-2xl bg-white shadow-sm p-8 text-center text-slate-400 text-sm">
+        <div class="rounded-2xl bg-white shadow-sm p-8 text-center text-slate-500 text-sm">
             등록된 행사가 없습니다. 위의 "새 행사 만들기"로 첫 행사를 만들어 보세요.
         </div>
     @endforelse
@@ -126,14 +126,14 @@
                 @forelse ($events as $event)
                     <tr class="hover:bg-indigo-50/40 transition cursor-pointer"
                         onclick="location.href='{{ route('admin.setup', $event) }}'">
-                        <td class="px-4 py-3 text-center text-slate-400">
+                        <td class="px-4 py-3 text-center text-slate-500">
                             {{ $events->total() - (($events->currentPage() - 1) * $events->perPage()) - $loop->index }}
                         </td>
                         <td class="px-4 py-3">
                             <a href="{{ route('admin.setup', $event) }}"
                                class="font-semibold text-slate-800 hover:text-indigo-600">{{ $event->name }}</a>
                             @if ($event->description)
-                                <span class="block text-xs text-slate-400 truncate max-w-md">{{ $event->description }}</span>
+                                <span class="block text-xs text-slate-500 truncate max-w-md">{{ $event->description }}</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center text-slate-500 whitespace-nowrap">
@@ -150,13 +150,13 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-center text-slate-400 whitespace-nowrap">
+                        <td class="px-4 py-3 text-center text-slate-500 whitespace-nowrap">
                             {{ $event->created_at->format('Y-m-d') }}
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-4 py-12 text-center text-slate-400">
+                        <td colspan="7" class="px-4 py-12 text-center text-slate-500">
                             등록된 행사가 없습니다. 위의 "새 행사 만들기"로 첫 행사를 만들어 보세요.
                         </td>
                     </tr>

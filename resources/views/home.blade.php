@@ -49,7 +49,7 @@
         — 로그인 없이 심사위원·관리자 화면을 모두 볼 수 있습니다.
     </p>
 
-    <p class="mt-3 text-center text-sm text-slate-400">
+    <p class="mt-3 text-center text-sm text-slate-500">
         심사위원이시라면
         <a href="{{ route('app.download') }}" class="font-medium text-slate-500 underline underline-offset-4 hover:text-indigo-600">앱으로 설치</a>해
         쓰시면 더 편합니다 — 전체화면으로 열리고, 인터넷이 끊겨도 점수가 보관됩니다.
@@ -57,7 +57,7 @@
 @endunless
 
 {{-- 행사 담당자용 진입 링크 --}}
-<p class="mt-8 text-center text-sm text-slate-400">
+<p class="mt-8 text-center text-sm text-slate-500">
     새로운 심사를 만들거나, 기존 행사 관리를 하시려면
     <a href="{{ route('events.index') }}" class="text-slate-500 hover:text-indigo-600 underline underline-offset-4 font-medium">여기를 눌러</a> 주세요.
 </p>
