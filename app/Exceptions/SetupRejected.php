@@ -19,9 +19,13 @@ class SetupRejected extends RuntimeException
         parent::__construct($message);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Laravel 검증 오류와 같은 모양 — 필드마다 메시지 목록.
+     *
+     * @return array<string, list<string>>
+     */
     public function errors(): array
     {
-        return [$this->field => $this->getMessage()];
+        return [$this->field => [$this->getMessage()]];
     }
 }

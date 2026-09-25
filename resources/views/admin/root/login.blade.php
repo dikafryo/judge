@@ -7,7 +7,7 @@
 <div class="mx-auto max-w-md">
     <div class="rounded-2xl border border-slate-200 bg-white p-8">
         <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900">
-            <span class="text-lg text-white" aria-hidden="true">🔑</span>
+            <span class="material-symbols-rounded text-[20px] leading-none text-white" aria-hidden="true">key</span>
         </div>
         <h1 class="mt-4 text-xl font-bold text-slate-900">전체 관리자</h1>
         <p class="mt-1.5 text-sm leading-relaxed text-slate-500">

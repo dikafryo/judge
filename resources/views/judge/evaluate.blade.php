@@ -3,7 +3,7 @@
 @section('title', $event->name . ' 심사')
 
 @section('header-right')
-    <span class="font-medium text-slate-700">{{ $judge->name }}</span> 심사위원님
+    <span class="font-medium text-slate-700 mr-1">{{ $judge->name }}</span> 심사위원님
 @endsection
 
 @section('content')
@@ -36,7 +36,7 @@
             <h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
                 {{ $event->name }}
                 @if ($event->is_open)
-                    <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-1 text-xs font-semibold align-middle">진행중</span>
+                    <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-1 text-xs font-semibold align-middle">진행 중</span>
                 @else
                     <span class="inline-flex items-center rounded-full bg-rose-50 text-rose-600 px-2.5 py-1 text-xs font-semibold align-middle">마감</span>
                 @endif
@@ -49,11 +49,15 @@
         </div>
         <div class="flex items-center gap-2">
             <button type="button" x-on:click="signatureOpen = true"
-                    class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition"
-                    x-text="pendingSignature ? '✍️ 서명 전송 대기' : (hasSignature ? '✍️ 서명 다시하기' : '✍️ 서명하기')"></button>
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+                <span class="material-symbols-rounded text-[16px] leading-none" aria-hidden="true">draw</span>
+                <span x-text="pendingSignature ? '서명 전송 대기' : (hasSignature ? '서명 다시하기' : '서명하기')"></span>
+            </button>
             @unless ($isJudgeApp)
                 <a href="{{ route('judge.print', $judge) }}" target="_blank"
-                   class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">🖨️ 심사표 출력</a>
+                   class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+                    <span class="material-symbols-rounded text-[16px] leading-none" aria-hidden="true">print</span>심사표 출력
+                </a>
             @endunless
         </div>
     </div>
@@ -125,11 +129,15 @@
 
             <div class="space-y-2 border-t border-slate-100 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <button type="button" x-on:click="drawerOpen = false; signatureOpen = true"
-                        class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-50"
-                        x-text="pendingSignature ? '✍️ 서명 전송 대기' : (hasSignature ? '✍️ 서명 다시하기' : '✍️ 서명하기')"></button>
+                        class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">
+                    <span class="material-symbols-rounded text-[16px] leading-none" aria-hidden="true">draw</span>
+                    <span x-text="pendingSignature ? '서명 전송 대기' : (hasSignature ? '서명 다시하기' : '서명하기')"></span>
+                </button>
                 @unless ($isJudgeApp)
                     <a href="{{ route('judge.print', $judge) }}" target="_blank"
-                       class="block w-full rounded-lg border border-slate-300 px-4 py-2.5 text-center text-sm font-semibold hover:bg-slate-50">🖨️ 심사표 출력</a>
+                       class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2.5 text-center text-sm font-semibold hover:bg-slate-50">
+                        <span class="material-symbols-rounded text-[16px] leading-none" aria-hidden="true">print</span>심사표 출력
+                    </a>
                 @endunless
             </div>
         </div>
@@ -144,7 +152,7 @@
         </aside>
 
         {{-- 점수 입력 폼 --}}
-        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" x-show="current()">
+        <section class="rounded-2xl border-0 bg-transparent p-0 shadow-none lg:border lg:border-slate-200 lg:bg-white lg:p-6 lg:shadow-sm" x-show="current()">
             {{-- 데스크톱 폼 헤더 — 모바일은 위 고정 바가 같은 역할을 한다 --}}
             <div class="mb-6 hidden flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 lg:flex">
                 <div>
@@ -172,20 +180,20 @@
                             <div class="mb-2 flex items-center justify-between px-1">
                                 <span class="font-bold text-slate-700" x-text="g.name"></span>
                                 <span class="text-xs font-semibold"
-                                      x-bind:class="groupTotal(g) > g.max_score ? 'text-rose-500' : 'text-slate-400'"
+                                      x-bind:class="groupTotal(g) > g.max_score ? 'text-rose-500' : 'text-slate-500'"
                                       x-text="groupTotal(g) + ' / ' + g.max_score + '점'"></span>
                             </div>
                         </template>
 
                         <div class="space-y-3" x-bind:class="g.has_children ? 'pl-3 border-l-2 border-indigo-100' : ''">
                             <template x-for="cr in g.items" :key="cr.id">
-                                <div class="rounded-xl border border-slate-200 p-4 sm:grid sm:grid-cols-[1fr_230px] sm:items-center sm:gap-3">
+                                <div class="rounded-xl bg-white shadow-sm p-4 sm:grid sm:grid-cols-[1fr_230px] sm:items-center sm:gap-3">
                                     <div>
                                         <div class="font-semibold text-slate-800">
                                             <span x-text="cr.name"></span>
-                                            <span class="ml-1 text-xs font-normal text-slate-400" x-text="'(배점 ' + cr.max_score + '점)'"></span>
+                                            <span class="ml-1 text-xs font-normal text-slate-500" x-text="'(배점 ' + cr.max_score + '점)'"></span>
                                         </div>
-                                        <p class="mt-0.5 text-xs text-slate-400" x-text="cr.description || ''"></p>
+                                        <p class="mt-0.5 text-xs text-slate-500" x-text="cr.description || ''"></p>
                                     </div>
 
                                     {{-- 점수 스테퍼 — 한 손으로 심사할 수 있게 큰 버튼, 정밀 입력은 가운데 숫자를 탭 --}}
@@ -194,7 +202,7 @@
                                                 x-on:pointerdown="holdStart(cr, -1, $event)" x-on:pointerup="holdStop()"
                                                 x-on:pointerleave="holdStop()" x-on:pointercancel="holdStop()"
                                                 x-on:contextmenu.prevent
-                                                class="h-12 w-12 shrink-0 select-none rounded-xl border-2 border-slate-200 text-2xl font-bold text-slate-500 transition active:bg-slate-100 disabled:opacity-40">&minus;</button>
+                                                class="h-12 w-12 shrink-0 select-none rounded-xl border-0 bg-slate-100 text-2xl font-bold text-slate-700 transition active:bg-slate-200 disabled:opacity-40">&minus;</button>
 
                                         <div class="min-w-0 flex-1 text-center">
                                             <input type="number" inputmode="decimal" min="0" step="0.5" x-bind:max="cr.max_score"
@@ -203,14 +211,14 @@
                                                    placeholder="–"
                                                    class="score-input w-full bg-transparent text-center text-3xl font-extrabold tabular-nums outline-none disabled:text-slate-400"
                                                    x-bind:class="draft[cr.id] > cr.max_score ? 'text-rose-600' : 'text-slate-900'">
-                                            <div class="text-[11px] text-slate-400" x-text="'/ ' + cr.max_score + '점'"></div>
+                                            <div class="text-[11px] text-slate-500" x-text="'/ ' + cr.max_score + '점'"></div>
                                         </div>
 
                                         <button type="button" aria-label="1점 올리기" x-bind:disabled="!isOpen"
                                                 x-on:pointerdown="holdStart(cr, 1, $event)" x-on:pointerup="holdStop()"
                                                 x-on:pointerleave="holdStop()" x-on:pointercancel="holdStop()"
                                                 x-on:contextmenu.prevent
-                                                class="h-12 w-12 shrink-0 select-none rounded-xl border-2 border-slate-200 text-2xl font-bold text-slate-500 transition active:bg-slate-100 disabled:opacity-40">+</button>
+                                                class="h-12 w-12 shrink-0 select-none rounded-xl border-0 bg-slate-100 text-2xl font-bold text-slate-700 transition active:bg-slate-200 disabled:opacity-40">+</button>
                                     </div>
                                 </div>
                             </template>

@@ -37,6 +37,19 @@ class Event extends Model implements AuthenticatableContract
     }
 
     /**
+     * 앱 관리자 토큰 발급 — 로그인·행사 생성이 같이 쓴다.
+     *
+     * 관리자 토큰은 행사 비밀번호와 같은 힘이라 기한을 둔다(config judge.admin_token_hours).
+     * 심사위원 토큰은 오프라인 하루를 버텨야 해서 기한 없이 발급한다(SessionController::judge).
+     */
+    public function issueAdminToken(): string
+    {
+        $hours = max(1, (int) config('judge.admin_token_hours'));
+
+        return $this->createToken('judge-app-admin', ['admin'], now()->addHours($hours))->plainTextToken;
+    }
+
+    /**
      * 심사위원 화면에 미리 채워 둘 점수 — 평가항목 만점의 default_score_percent %.
      * 입력 단위가 0.5점이라 0.5 단위로 맞춘다. 미사용이면 null 을 돌려준다.
      */

@@ -43,7 +43,7 @@ class JudgeScoringTest extends TestCase
     {
         return $this->postJson("/judge/{$judge->code}/scores", [
             'candidate_id' => $candidateId,
-            'scores'       => $scores,
+            'scores' => $scores,
         ]);
     }
 
@@ -156,7 +156,7 @@ class JudgeScoringTest extends TestCase
     public function test_서명을_저장한다(): void
     {
         ['judge' => $judge] = $this->makeEvent();
-        $png = 'data:image/png;base64,' . base64_encode('fake-png');
+        $png = 'data:image/png;base64,'.base64_encode('fake-png');
 
         $this->postJson("/judge/{$judge->code}/signature", ['signature' => $png])->assertOk();
 

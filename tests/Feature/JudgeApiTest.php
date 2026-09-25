@@ -61,15 +61,15 @@ class JudgeApiTest extends TestCase
         $this->postJson('/api/v1/judge/session', ['code' => '000000'])->assertStatus(422);
     }
 
-    public function test_로그인_시도를_분당_5회로_제한한다(): void
+    public function test_같은_코드의_로그인_시도를_분당_10회로_제한한다(): void
     {
         $this->makeEvent();
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             $this->postJson('/api/v1/judge/session', ['code' => '000000'])->assertStatus(422);
         }
 
-        // 6번째부터는 429 — 6자리 코드 대입에 대한 사실상 유일한 방어선이다
+        // 11번째부터는 429 — 6자리 코드 대입에 대한 방어선이다 (IP 기준 제한은 ApiContractTest)
         $this->postJson('/api/v1/judge/session', ['code' => '000000'])->assertStatus(429);
     }
 
@@ -190,14 +190,14 @@ class JudgeApiTest extends TestCase
             ->assertJsonStructure(['event', 'judges', 'rows', 'generated_at']);
     }
 
-    public function test_심사위원_토큰으로는_관리자_API에_못_들어간다(): void
+    public function test_심사위원_토큰으로는_관리자_api에_못_들어간다(): void
     {
         ['judge' => $judge] = $this->makeEvent();
 
         $this->asJudge($judge)->getJson('/api/v1/admin/dashboard')->assertStatus(403);
     }
 
-    public function test_출력은_단기_서명_URL로_넘긴다(): void
+    public function test_출력은_단기_서명_url로_넘긴다(): void
     {
         ['event' => $event] = $this->makeEvent();
         $token = $this->postJson('/api/v1/admin/session', [

@@ -1,0 +1,5 @@
+{
+    "(and :count more error)": "(외 :count건)",
+    "(and :count more errors)": "(외 :count건)",
+    "The given data was invalid.": "입력값이 올바르지 않습니다."
+}

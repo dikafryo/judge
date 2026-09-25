@@ -12,7 +12,7 @@ tools: Read, Grep, Glob, Edit, Write, Bash
 
 ## 명령
 
-- 웹: `docker exec -w /var/www/html/sw4u/judge phpfpm php artisan test` , `... composer lint`
+- 웹: `docker exec -w /var/www/html/sw4u/judge phpfpm php artisan test` , `docker exec -w /var/www/html/sw4u/judge phpfpm php vendor/bin/pint --test`
 - 앱: `cd /var/services/web/apps/judge-app && /home/dikafryo/flutter/bin/flutter analyze && /home/dikafryo/flutter/bin/flutter test`
 - 스크린샷 회귀: `scripts/make_screenshots.sh` (store/ 의 JPEG 을 덮어쓰므로 결과를 눈으로 확인)
 

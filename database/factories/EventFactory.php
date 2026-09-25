@@ -14,16 +14,16 @@ class EventFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'             => '제1회 ' . fake()->word() . ' 경진대회',
-            'description'      => null,
-            'event_date'       => now()->toDateString(),
-            'admin_password'   => Hash::make('secret-password'),
-            'is_open'          => true,
-            'is_demo'          => false,
-            'scoring_method'   => 'all',
-            'pass_count'       => null,
-            'is_blind'         => true,
-            'report_signers'   => null,
+            'name' => '제1회 '.fake()->word().' 경진대회',
+            'description' => null,
+            'event_date' => now()->toDateString(),
+            'admin_password' => Hash::make('secret-password'),
+            'is_open' => true,
+            'is_demo' => false,
+            'scoring_method' => 'all',
+            'pass_count' => null,
+            'is_blind' => true,
+            'report_signers' => null,
             'show_judge_signs' => true,
         ];
     }

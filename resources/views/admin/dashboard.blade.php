@@ -23,24 +23,28 @@
                       x-show="data"
                       x-bind:class="data?.event.scoring_method === 'trimmed' ? 'bg-violet-50 text-violet-700' : 'bg-slate-100 text-slate-600'"
                       x-text="data?.event.scoring_method === 'trimmed' ? '집계: 최고·최저 총점 제외' : '집계: 전체 합계·평균'"></span>
-                <span class="inline-flex items-center rounded-full bg-amber-50 text-amber-700 px-2.5 py-0.5 text-xs font-semibold"
+                <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2.5 py-0.5 text-xs font-semibold"
                       x-show="data && data.event.scoring_method === 'trimmed' && data.judges.length < {{ $trimmedMinJudges }}" x-cloak>
-                    ⚠️ 심사위원 {{ $trimmedMinJudges }}명 미만 — 제외 없이 전체 집계
+                    <span class="material-symbols-rounded text-[13px] leading-none" aria-hidden="true">warning</span>심사위원 {{ $trimmedMinJudges }}명 미만 — 제외 없이 전체 집계
                 </span>
             </p>
         </div>
         <div class="flex items-center gap-2">
             <a href="{{ route('admin.export', $event) }}"
-               class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">⬇️ CSV 다운로드</a>
+               class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50 transition">
+                <span class="material-symbols-rounded text-[16px] leading-none" aria-hidden="true">download</span>CSV 다운로드
+            </a>
             <a href="{{ route('admin.print', $event) }}" target="_blank"
-               class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-semibold transition">🖨️ 최종결과 출력</a>
+               class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-semibold transition">
+                <span class="material-symbols-rounded text-[16px] leading-none" aria-hidden="true">print</span>최종결과 출력
+            </a>
         </div>
     </div>
 
     {{-- 마지막 선정 순위 동점 경고 --}}
     <div x-show="data?.pass_tie" x-cloak
          class="mb-6 rounded-lg bg-rose-50 border border-rose-300 text-rose-700 px-4 py-3 text-sm">
-        <strong>⚠️ 동점자 발생!</strong>
+        <strong class="inline-flex items-center gap-1"><span class="material-symbols-rounded text-[15px] leading-none" aria-hidden="true">warning</span>동점자 발생!</strong>
         <span x-text="data?.pass_tie
             ? `${data.pass_tie.rank}위 동점 ${data.pass_tie.tied}곳, 남은 선정 자리 ${data.pass_tie.slots}곳 — 점수를 조정해 동점을 해소하세요.`
             : ''"></span>
@@ -54,10 +58,12 @@
                     <div class="flex items-center justify-between gap-1">
                         <span class="font-semibold text-sm truncate" x-text="j.name"></span>
                         <span class="flex items-center gap-1 shrink-0">
-                            <span class="text-xs" x-text="j.signed ? '✍️' : ''" title="서명 완료"></span>
+                            <span class="material-symbols-rounded text-[14px] leading-none text-indigo-500" x-show="j.signed" title="서명 완료" aria-hidden="true">draw</span>
                             <a x-bind:href="'{{ url('admin/' . $event->id . '/judges') }}/' + j.judge_id + '/sheet'" target="_blank"
-                               class="text-xs rounded bg-indigo-50 text-indigo-600 px-1.5 py-0.5 hover:bg-indigo-100 transition"
-                               title="개별심사표 출력">🖨️</a>
+                               class="inline-flex items-center rounded bg-indigo-50 text-indigo-600 px-1.5 py-0.5 hover:bg-indigo-100 transition"
+                               title="개별심사표 출력">
+                                <span class="material-symbols-rounded text-[14px] leading-none" aria-hidden="true">print</span>
+                            </a>
                         </span>
                     </div>
                     <div class="mt-2 flex items-end justify-between">
@@ -93,7 +99,7 @@
                 <tbody class="divide-y divide-slate-100">
                     <template x-for="row in (data?.rows ?? [])" :key="row.candidate_id">
                         <tr class="transition"
-                            x-bind:class="row.pass === 'pass' ? 'bg-emerald-50/70 hover:bg-emerald-50'
+                            x-bind:class="row.pass === 'pass' ? 'bg-indigo-50 hover:bg-indigo-100/60'
                                         : row.pass === 'tie' ? 'bg-amber-50/80 hover:bg-amber-50'
                                         : 'hover:bg-slate-50'">
                             <td class="px-4 py-3 text-center">
@@ -110,7 +116,7 @@
                                 <span class="font-semibold text-slate-800" x-text="row.name"></span>
                                 <span class="text-xs text-slate-400 ml-1" x-text="row.affiliation ?? ''"></span>
                                 <span x-show="row.pass === 'pass'" x-cloak
-                                      class="ml-1 inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-xs font-bold align-middle">선정</span>
+                                      class="ml-1 inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-xs font-bold align-middle">선정</span>
                                 <span x-show="row.pass === 'tie'" x-cloak
                                       class="ml-1 inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-xs font-bold align-middle">동점 — 확정 불가</span>
                                 <span class="text-xs text-slate-400 block"
@@ -143,7 +149,7 @@
             </template>
             ※ 모든 항목 채점을 완료한 심사위원의 점수만 반영하며, 순위는 평균 점수 기준입니다.<br>
             <template x-if="data?.event.pass_count">
-                <span>※ 선정자(선정기관) 수 <strong x-text="data.event.pass_count"></strong>곳 기준 — 평균 상위 순으로 <span class="text-emerald-600 font-semibold">선정</span> 표시되며, 마지막 선정 순위에 동점이 생기면 <span class="text-amber-600 font-semibold">동점</span>으로 표시됩니다.</span>
+                <span>※ 선정자(선정기관) 수 <strong x-text="data.event.pass_count"></strong>곳 기준 — 평균 상위 순으로 <span class="text-indigo-600 font-semibold">선정</span> 표시되며, 마지막 선정 순위에 동점이 생기면 <span class="text-amber-600 font-semibold">동점</span>으로 표시됩니다.</span>
             </template>
         </p>
     </section>

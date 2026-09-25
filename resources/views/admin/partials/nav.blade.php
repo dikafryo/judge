@@ -83,7 +83,7 @@
         <div class="flex items-center gap-3">
             <h1 class="text-2xl font-bold text-slate-900">{{ $event->name }}</h1>
             @if ($event->is_open)
-                <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-sm font-semibold">심사 진행중</span>
+                <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-sm font-semibold">심사 진행 중</span>
             @else
                 <span class="inline-flex items-center rounded-full bg-rose-50 text-rose-600 px-3 py-1 text-sm font-semibold">심사 마감됨</span>
             @endif
@@ -104,7 +104,7 @@
 
     @unless ($event->is_open)
         <x-alert tone="danger" class="mt-3">
-            🔒 심사가 마감되어 이 행사의 모든 설정·데이터 수정이 잠겼습니다. 조회와 출력만 가능하며, 수정하려면 <strong>기본설정</strong> 탭의 '심사 재개하기'를 누르세요.
+            <span class="inline-flex items-center gap-1"><span class="material-symbols-rounded text-[15px] leading-none" aria-hidden="true">lock</span>심사가 마감되어 이 행사의 모든 설정·데이터 수정이 잠겼습니다.</span> 조회와 출력만 가능하며, 수정하려면 <strong>기본설정</strong> 탭의 '심사 재개하기'를 누르세요.
         </x-alert>
     @endunless
 </div>

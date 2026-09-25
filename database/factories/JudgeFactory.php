@@ -15,9 +15,9 @@ class JudgeFactory extends Factory
     {
         return [
             'event_id' => Event::factory(),
-            'name'     => fake()->name(),
+            'name' => fake()->name(),
             // 운영 코드와 같은 형식(6자리 숫자). unique 로 충돌을 피한다
-            'code'     => (string) fake()->unique()->numberBetween(100000, 999999),
+            'code' => (string) fake()->unique()->numberBetween(100000, 999999),
         ];
     }
 

@@ -17,8 +17,8 @@
             <h2 class="font-bold text-lg">심사위원 <span class="text-sm text-slate-400 font-normal">({{ $event->judges->count() }})</span></h2>
             @if ($event->judges->whereNotNull('code')->isNotEmpty())
                 <a href="{{ route('admin.judges.print', $event) }}" target="_blank"
-                   class="text-xs rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600 px-3 py-1.5 font-semibold hover:bg-indigo-100 transition">
-                    📱 접속안내 출력 (QR)
+                   class="inline-flex items-center gap-1 text-xs rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600 px-3 py-1.5 font-semibold hover:bg-indigo-100 transition">
+                    <span class="material-symbols-rounded text-[14px] leading-none" aria-hidden="true">smartphone</span>접속안내 출력 (QR)
                 </a>
             @endif
         </div>
@@ -57,7 +57,7 @@
         <h2 class="font-bold text-lg mb-4">심사위원 등록 / 일괄 등록</h2>
 
         @unless ($event->is_open)
-            <p class="text-sm text-slate-400 text-center py-6">🔒 심사 마감 — 심사위원을 추가·삭제할 수 없습니다.</p>
+            <p class="text-sm text-slate-400 text-center py-6 flex items-center justify-center gap-1"><span class="material-symbols-rounded text-[15px] leading-none" aria-hidden="true">lock</span>심사 마감 — 심사위원을 추가·삭제할 수 없습니다.</p>
         @else
             <form method="POST" action="{{ route('admin.judges.store', $event) }}" class="space-y-2">
                 @csrf

@@ -12,7 +12,7 @@
 {{-- 배점 합계 경고 --}}
 @if ($totalMax !== $maxTotal)
     <x-alert class="mb-6">
-        ⚠️ 현재 평가 항목(1레벨) 배점 합계가 <strong>{{ $totalMax }}점</strong>입니다. 심사를 시작하려면 반드시 <strong>{{ $maxTotal }}점</strong>이 되도록 항목을 구성하세요.
+        <span class="inline-flex items-center gap-1"><span class="material-symbols-rounded text-[15px] leading-none" aria-hidden="true">warning</span>현재 평가 항목(1레벨) 배점 합계가 <strong>{{ $totalMax }}점</strong>입니다.</span> 심사를 시작하려면 반드시 <strong>{{ $maxTotal }}점</strong>이 되도록 항목을 구성하세요.
     </x-alert>
 @endif
 
@@ -25,7 +25,7 @@
 @endphp
 @if ($mismatchGroups->isNotEmpty())
     <x-alert class="mb-6">
-        ⚠️ 2레벨 배점 합계가 1레벨 배점과 다릅니다:
+        <span class="inline-flex items-center gap-1"><span class="material-symbols-rounded text-[15px] leading-none" aria-hidden="true">warning</span>2레벨 배점 합계가 1레벨 배점과 다릅니다:</span>
         @foreach ($mismatchGroups as $g)
             <strong>{{ $g->name }}</strong> (2레벨 합계 {{ (int) $byParent->get($g->id, collect())->sum('max_score') }}점 / 1레벨 {{ $g->max_score }}점){{ $loop->last ? '' : ', ' }}
         @endforeach
@@ -111,7 +111,7 @@
 
         @unless ($event->is_open)
             <div class="h-fit rounded-xl border border-slate-200 p-4 bg-slate-50/50 text-sm text-slate-400 text-center">
-                🔒 심사 마감 — 항목을 추가·삭제할 수 없습니다.
+                <span class="inline-flex items-center gap-1"><span class="material-symbols-rounded text-[15px] leading-none" aria-hidden="true">lock</span>심사 마감 — 항목을 추가·삭제할 수 없습니다.</span>
             </div>
         @else
         <form method="POST" action="{{ route('admin.criteria.store', $event) }}"

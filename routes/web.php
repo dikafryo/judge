@@ -64,7 +64,7 @@ Route::view('/privacy', 'privacy', [
 */
 // 접속 코드는 6자리 숫자(90만 가지)라 대입이 가능하다. API 와 같은 제한을 건다.
 Route::post('/judge/enter', [JudgeController::class, 'enter'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:judge-login')
     ->name('judge.enter');
 
 Route::prefix('judge/{judge:code}')->middleware('demo.readonly')->group(function () {
@@ -86,7 +86,7 @@ Route::prefix('judge/{judge:code}')->middleware('demo.readonly')->group(function
 Route::prefix('root')->group(function () {
     Route::get('/login', [RootController::class, 'showLogin'])->name('root.login');
     Route::post('/login', [RootController::class, 'login'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:root-login')
         ->name('root.login.post');
     Route::post('/logout', [RootController::class, 'logout'])->name('root.logout');
 

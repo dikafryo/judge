@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\ScoreRejected;
 use App\Models\Candidate;
 use App\Models\Judge;
-use App\Exceptions\ScoreRejected;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,7 +27,7 @@ class ScoreWriter
      */
     public function save(Judge $judge, Candidate $candidate, array $scores): array
     {
-        $event  = $judge->event;
+        $event = $judge->event;
         $leaves = $event->leafCriteria()->keyBy('id');
         $filled = 0;
 
@@ -72,14 +72,14 @@ class ScoreWriter
 
         // 블라인드면 응답 메시지에도 이름 대신 심사번호만 쓴다
         $number = $event->candidateNumbers()[$candidate->id] ?? $candidate->id;
-        $label  = $event->is_blind ? "심사번호 {$number}" : "{$number}. {$candidate->name}";
+        $label = $event->is_blind ? "심사번호 {$number}" : "{$number}. {$candidate->name}";
 
         return [
-            'message'      => "{$label} 점수가 저장되었습니다.",
+            'message' => "{$label} 점수가 저장되었습니다.",
             'candidate_id' => $candidate->id,
-            'total'        => (float) $saved->sum('score'),
+            'total' => (float) $saved->sum('score'),
             // 두 기기에서 채점했을 때 앱이 충돌을 알아챌 재료. 웹 응답에는 원래 없던 값이다.
-            'updated_at'   => optional($saved->max('updated_at'))
+            'updated_at' => optional($saved->max('updated_at'))
                 ? (string) $saved->max('updated_at')
                 : null,
         ];

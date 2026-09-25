@@ -129,7 +129,7 @@ class AdminApiTest extends TestCase
             'name' => '실행', 'max_score' => 30,
         ], $this->admin($event))
             ->assertStatus(422)
-            ->assertJsonPath('errors.max_score', fn ($message) => str_contains($message, '100점을 초과'));
+            ->assertJsonPath('errors.max_score.0', fn ($message) => str_contains($message, '100점을 초과'));
     }
 
     public function test_이미_채점된_항목_밑에는_2레벨을_만들지_못한다(): void
@@ -150,7 +150,7 @@ class AdminApiTest extends TestCase
             'name' => '창의성', 'max_score' => 30, 'parent_id' => $parent->id,
         ], $this->admin($event))
             ->assertStatus(422)
-            ->assertJsonPath('errors.parent_id', fn ($m) => str_contains($m, '이미 입력된 점수'));
+            ->assertJsonPath('errors.parent_id.0', fn ($m) => str_contains($m, '이미 입력된 점수'));
     }
 
     public function test_심사위원을_일괄_등록하면_코드가_발급된다(): void
@@ -313,7 +313,7 @@ class AdminApiTest extends TestCase
             'signers' => [],
         ], $this->admin($event))
             ->assertStatus(422)
-            ->assertJsonPath('errors.signers', fn (string $message): bool => str_contains($message, '기록자'));
+            ->assertJsonPath('errors.signers.0', fn (string $message): bool => str_contains($message, '기록자'));
     }
 
     public function test_앱에서_행사명을_확인한_뒤_행사를_삭제한다(): void

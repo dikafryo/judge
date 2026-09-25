@@ -126,7 +126,7 @@
                     </span>
                     <span class="flex-1 text-sm font-bold text-slate-800">
                         @if ($tourStep === 4)
-                            🎉 행사 도우미 · 준비 끝!
+                            <span class="inline-flex items-center gap-1"><span class="material-symbols-rounded text-[15px] leading-none" aria-hidden="true">celebration</span>행사 도우미 · 준비 끝!</span>
                         @else
                             행사 도우미 {{ $tourStep }}/3 · {{ $tourSteps[$tourStep]['title'] }}
                         @endif

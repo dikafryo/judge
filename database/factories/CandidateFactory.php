@@ -14,11 +14,11 @@ class CandidateFactory extends Factory
     public function definition(): array
     {
         return [
-            'event_id'    => Event::factory(),
-            'name'        => fake()->name(),
+            'event_id' => Event::factory(),
+            'name' => fake()->name(),
             'affiliation' => fake()->company(),
             'description' => null,
-            'sort_order'  => 0,
+            'sort_order' => 0,
         ];
     }
 }

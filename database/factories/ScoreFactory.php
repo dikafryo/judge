@@ -16,10 +16,10 @@ class ScoreFactory extends Factory
     public function definition(): array
     {
         return [
-            'judge_id'     => Judge::factory(),
+            'judge_id' => Judge::factory(),
             'candidate_id' => Candidate::factory(),
             'criterion_id' => Criterion::factory(),
-            'score'        => fake()->numberBetween(0, 50),
+            'score' => fake()->numberBetween(0, 50),
         ];
     }
 }

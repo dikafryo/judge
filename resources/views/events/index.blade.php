@@ -4,7 +4,7 @@
 
 @section('header-right')
     @unless ($isJudgeApp)
-        <a href="{{ route('demo') }}" class="mr-3 text-amber-700 hover:underline font-medium">체험해 보기</a>
+        <a href="{{ route('demo') }}" class="mr-3 whitespace-nowrap text-amber-700 hover:underline font-medium">체험해 보기</a>
     @endunless
     <a href="{{ route('home') }}" class="text-indigo-600 hover:underline font-medium">← 홈으로</a>
 @endsection
@@ -16,16 +16,18 @@
     <div>
         <h1 class="text-2xl font-bold text-slate-900">행사 관리</h1>
         <p class="mt-1 text-sm text-slate-500">행사를 클릭하면 해당 행사 설정으로 이동합니다. (관리 비밀번호 필요)</p>
-        <p class="mt-1 text-xs text-amber-600">⚠️ 행사일(미지정 시 등록일) 기준 30일이 지나면 자동 삭제됩니다. <strong>마감 처리한 행사는 2년간 보관</strong>되니, 보관할 행사는 꼭 마감하세요.</p>
+        <p class="mt-1 text-xs text-amber-600 flex items-center gap-1"><span class="material-symbols-rounded align-[-3px] text-[16px] leading-none" aria-hidden="true">warning</span> 행사일(미지정 시 등록일) 기준 30일이 지나면 자동 삭제됩니다. <strong>마감 처리한 행사는 2년간 보관</strong>되니, 보관할 행사는 꼭 마감하세요.</p>
     </div>
     <button type="button" x-on:click="createOpen = !createOpen"
-            class="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-semibold transition">＋ 새 행사 만들기</button>
+            class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-semibold transition">＋ 새 행사 만들기</button>
 </div>
 
 {{-- 새 행사 생성 폼 --}}
-<section x-show="createOpen" x-cloak class="mb-6 bg-white rounded-2xl shadow-sm border border-emerald-200 p-6">
+<section x-show="createOpen" x-cloak class="mb-6 bg-white rounded-2xl shadow-sm border border-indigo-200 p-6">
     <div class="flex items-center gap-3 mb-4">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 text-lg">📋</span>
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-100 text-indigo-600 text-lg">
+            <span class="material-symbols-rounded text-[20px] leading-none" aria-hidden="true">event_note</span>
+        </span>
         <h2 class="text-lg font-bold">새 행사 만들기</h2>
     </div>
     <p class="text-sm text-slate-500 mb-4">행사를 만들고 비밀번호로 관리하세요. 별도 회원가입이 없습니다.</p>
@@ -34,7 +36,7 @@
         @csrf
         <input type="text" name="name" value="{{ old('name') }}" required maxlength="100"
                placeholder="행사명 (예: 2026 창업 경진대회)"
-               class="rounded-lg border-slate-300 border px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+               class="rounded-lg border-slate-300 border px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
         {{-- 날짜 입력 — 숫자 연속 입력(20260712)도 자동으로 2026-07-12로 채워지고, 📅 버튼으로 달력 피커도 사용 가능 --}}
         <div class="relative">
             <input type="text" name="event_date" value="{{ old('event_date') }}" x-ref="dateText"
@@ -44,27 +46,69 @@
                                $el.value = v.length > 6 ? v.slice(0, 4) + '-' + v.slice(4, 6) + '-' + v.slice(6)
                                          : v.length > 4 ? v.slice(0, 4) + '-' + v.slice(4)
                                          : v"
-                   class="w-full rounded-lg border-slate-300 border px-4 py-2.5 pr-11 text-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                   class="w-full rounded-lg border-slate-300 border px-4 py-2.5 pr-11 text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
             <input type="date" x-ref="datePicker" tabindex="-1" aria-hidden="true"
                    class="absolute right-2 bottom-1 w-px h-px opacity-0 pointer-events-none"
                    x-on:change="$refs.dateText.value = $event.target.value">
             <button type="button" title="달력에서 날짜 선택" aria-label="달력에서 날짜 선택"
                     x-on:click="$refs.datePicker.value = /^\d{4}-\d{2}-\d{2}$/.test($refs.dateText.value) ? $refs.dateText.value : '';
                                 try { $refs.datePicker.showPicker() } catch (e) { $refs.datePicker.focus() }"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-1.5 py-1 text-lg leading-none hover:bg-slate-100 transition">📅</button>
+                    class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-1.5 py-1 text-lg leading-none hover:bg-slate-100 transition">
+                <span class="material-symbols-rounded text-[18px] leading-none" aria-hidden="true">calendar_month</span>
+            </button>
         </div>
         <input type="password" name="admin_password" required minlength="4"
                placeholder="관리 비밀번호 (4자 이상)"
-               class="rounded-lg border-slate-300 border px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+               class="rounded-lg border-slate-300 border px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
         <button type="submit"
-                class="sm:col-span-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 transition">
+                class="sm:col-span-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 transition">
             행사 만들기
         </button>
     </form>
     <p class="mt-3 text-xs text-slate-400">※ 비밀번호는 행사 관리(대상·항목·심사위원 등록, 대시보드)에 사용됩니다. 분실 시 복구할 수 없으니 꼭 기억해 두세요.</p>
 </section>
 
-<section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+{{-- 모바일 카드 목록 (sm 미만) — 좁은 화면에서 표를 가로 스크롤하지 않도록 카드로 재구성 --}}
+<section class="space-y-3 sm:hidden">
+    @forelse ($events as $event)
+        <a href="{{ route('admin.setup', $event) }}"
+           class="block rounded-2xl bg-white shadow-sm p-4 active:bg-slate-50 transition">
+            <div class="flex items-start justify-between gap-2">
+                <span class="font-bold text-slate-900 line-clamp-2">{{ $event->name }}</span>
+            </div>
+            <div class="mt-1.5 flex items-center gap-2">
+                @if ($event->is_open)
+                    <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[11px] font-semibold">진행 중</span>
+                @else
+                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-800 px-2 py-0.5 text-[11px] font-semibold">
+                        <span class="material-symbols-rounded text-[12px] leading-none" aria-hidden="true">lock</span>마감
+                    </span>
+                @endif
+                <span class="text-xs text-slate-400">{{ $event->event_date?->format('Y-m-d') ?? '행사일 미지정' }}</span>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-2">
+                <div class="rounded-xl bg-sky-50 p-2 text-center">
+                    <div class="text-lg font-extrabold text-sky-700">{{ $event->candidates_count }}</div>
+                    <div class="text-[11px] text-sky-700/70">대상</div>
+                </div>
+                <div class="rounded-xl bg-violet-50 p-2 text-center">
+                    <div class="text-lg font-extrabold text-violet-700">{{ $event->criteria_count }}</div>
+                    <div class="text-[11px] text-violet-700/70">항목</div>
+                </div>
+                <div class="rounded-xl bg-teal-50 p-2 text-center">
+                    <div class="text-lg font-extrabold text-teal-700">{{ $event->judges_count }}</div>
+                    <div class="text-[11px] text-teal-700/70">심사위원</div>
+                </div>
+            </div>
+        </a>
+    @empty
+        <div class="rounded-2xl bg-white shadow-sm p-8 text-center text-slate-400 text-sm">
+            등록된 행사가 없습니다. 위의 "새 행사 만들기"로 첫 행사를 만들어 보세요.
+        </div>
+    @endforelse
+</section>
+
+<section class="hidden sm:block bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
@@ -99,9 +143,11 @@
                         <td class="px-4 py-3 text-center text-slate-600">{{ $event->judges_count }}</td>
                         <td class="px-4 py-3 text-center">
                             @if ($event->is_open)
-                                <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-0.5 text-xs font-semibold">진행중</span>
+                                <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-0.5 text-xs font-semibold">진행 중</span>
                             @else
-                                <span class="inline-flex items-center rounded-full bg-slate-100 text-slate-500 px-2.5 py-0.5 text-xs font-semibold">마감</span>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-800 px-2.5 py-0.5 text-xs font-semibold">
+                                    <span class="material-symbols-rounded text-[13px] leading-none" aria-hidden="true">lock</span>마감
+                                </span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center text-slate-400 whitespace-nowrap">

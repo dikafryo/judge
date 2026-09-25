@@ -41,4 +41,18 @@ return [
 
     // 등록을 마친 뒤 설치하는 스토어 페이지 — 안드로이드 기기에서 연다
     'play_store_url' => env('JUDGE_PLAY_STORE_URL', 'https://play.google.com/store/apps/details?id=kr.sw4u.judge_app'),
+
+    /*
+     * 앱 API 계약 — GET /api/v1/meta 로 나간다.
+     *
+     * min_app_build 보다 낮은 빌드는 앱이 "업데이트 필요"로 안내한다.
+     * 서버 API 가 옛 앱과 호환되지 않게 바뀔 때만 올린다. 배포 중인 빌드: 16(알파)·17(현행).
+     */
+    'min_app_build' => (int) env('JUDGE_MIN_APP_BUILD', 16),
+
+    /*
+     * 앱 관리자 토큰 수명(시간). 행사 하루를 넉넉히 덮는다.
+     * 심사위원 토큰은 만료가 없다 — 오프라인으로 하루를 버텨야 하고, 마감·코드 재발급 때 서버가 회수한다.
+     */
+    'admin_token_hours' => (int) env('JUDGE_ADMIN_TOKEN_HOURS', 12),
 ];

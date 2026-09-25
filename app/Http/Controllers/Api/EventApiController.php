@@ -49,7 +49,7 @@ class EventApiController extends Controller
         $event = $setup->createEvent($request->validated());
 
         return response()->json([
-            'token' => $event->createToken('judge-app-admin', ['admin'])->plainTextToken,
+            'token' => $event->issueAdminToken(),
             'event' => ['id' => $event->id, 'name' => $event->name, 'is_open' => $event->is_open],
         ], 201);
     }

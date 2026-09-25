@@ -15,8 +15,9 @@ use Illuminate\Support\Facades\Hash;
  * 네이티브 앱의 로그인 — 접속 코드/비밀번호를 Bearer 토큰으로 교환한다.
  *
  * 코드를 URL 에 계속 싣는 웹 방식과 달리, 앱은 토큰 하나만 들고 다닌다.
- * 이 두 엔드포인트에는 routes/api.php 에서 throttle:5,1 이 걸려 있다 —
+ * 이 두 엔드포인트에는 routes/api.php 에서 이름 붙은 제한(judge-login·admin-login)이 걸려 있다 —
  * 6자리 숫자 코드는 대입이 가능하므로 이 제한이 사실상 유일한 방어선이다.
+ * 제한 규칙은 AppServiceProvider::configureRateLimiting() 에 있다.
  */
 class SessionController extends Controller
 {
@@ -24,9 +25,9 @@ class SessionController extends Controller
     public function meta(): JsonResponse
     {
         return response()->json([
-            'api_version'   => 'v1',
-            // 서버 API 가 바뀌었는데 옛 앱이 조용히 오작동하는 것을 막는다
-            'min_app_build' => 1,
+            'api_version' => 'v1',
+            // 서버 API 가 바뀌었는데 옛 앱이 조용히 오작동하는 것을 막는다 (config/judge.php)
+            'min_app_build' => (int) config('judge.min_app_build'),
         ]);
     }
 
@@ -65,7 +66,7 @@ class SessionController extends Controller
             return response()->json(['message' => '행사 또는 비밀번호가 올바르지 않습니다.'], 422);
         }
 
-        $token = $event->createToken('judge-app-admin', ['admin'])->plainTextToken;
+        $token = $event->issueAdminToken();
 
         return response()->json([
             'token' => $token,

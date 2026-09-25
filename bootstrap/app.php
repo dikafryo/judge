@@ -7,12 +7,15 @@ use App\Http\Middleware\EnsureApiEventWritable;
 use App\Http\Middleware\EnsureEventAdmin;
 use App\Http\Middleware\EnsureEventOpen;
 use App\Http\Middleware\EnsureSuperAdmin;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,12 +27,27 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // NPM(리버스 프록시) 뒤에서 서빙됨 — X-Forwarded-Proto 를 신뢰해야
-        // route()/asset() 이 https URL을 생성한다 (없으면 혼합 콘텐츠/비보안 폼 경고 발생).
-        // 내부 nginx가 realip 모듈(real_ip_header X-Forwarded-For)로 REMOTE_ADDR을
-        // "실제 방문자 IP"로 복원하므로 프록시 IP 목록 방식은 쓸 수 없다 → '*' 가 정답.
-        // 외부 유입은 80/443을 독점한 NPM뿐이고 NPM이 X-Forwarded-Proto를 덮어쓰므로 스푸핑 불가.
-        $middleware->trustProxies(at: '*');
+        // 경로: Cloudflare → NPM(80/443) → nginx(realip) → phpfpm.
+        // nginx 의 realip 은 172.18.0.0/16(NPM)만 걷어내므로 REMOTE_ADDR 은 Cloudflare 엣지 IP 가 되고,
+        // 실제 방문자는 X-Forwarded-For 의 그 앞 칸에 있다. 그래서 Laravel 이 한 번 더 걷어내야 한다.
+        //
+        // 예전의 '*'(REMOTE_ADDR 을 무조건 신뢰)는 Cloudflare 를 거친 요청엔 맞지만,
+        // 원서버에 직접 붙는 요청이 X-Forwarded-For 를 지어내면 request()->ip() 가 그 값이 된다
+        // → IP 기준 로그인 제한을 IP 를 바꿔 가며 우회할 수 있었다.
+        // 이제 Cloudflare 대역과 내부망(LAN·tailscale·docker·loopback)만 프록시로 신뢰한다.
+        // 목록 출처: https://www.cloudflare.com/ips/ (대역이 바뀌면 여기만 고친다)
+        $middleware->trustProxies(at: [
+            // Cloudflare IPv4
+            '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+            '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+            '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+            '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+            // Cloudflare IPv6
+            '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+            '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32',
+            // 내부망 — LAN·docker(172.16/12 에 webserver-net 포함)·tailscale(100.64/10)·loopback
+            '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '100.64.0.0/10', '127.0.0.1', '::1',
+        ]);
 
         // 행사별 관리자 세션 미들웨어 별칭
         $middleware->alias([
@@ -62,4 +80,39 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // 점수 저장은 웹도 AJAX 라 양쪽 모두 JSON 이다.
         $exceptions->render(fn (ScoreRejected $e) => response()->json(['message' => $e->getMessage()], 422));
+
+        // 앱(api/*)이 받는 오류 문구 — 앱은 message 를 그대로 사용자에게 보여 준다.
+        // 프레임워크 기본값은 영어이거나("Unauthenticated.") 모델 클래스명까지 드러낸다.
+
+        // 토큰이 없거나 폐기됨. 심사 마감·코드 재발급 때 서버가 심사위원 토큰을 지우므로
+        // 사용자가 "왜 튕겼는지" 알 수 있게 이유를 적는다.
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => '접속이 만료되었습니다. 심사가 마감되었거나 코드가 바뀌었습니다.'], 401);
+            }
+
+            return null;
+        });
+
+        // 라우트 모델 바인딩 실패(ModelNotFoundException 은 여기 오기 전에 404 로 바뀐다)와 없는 경로.
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => '대상을 찾을 수 없습니다. 삭제되었을 수 있습니다.'], 404);
+            }
+
+            return null;
+        });
+
+        // 로그인 제한에 걸림. Retry-After 등 헤더는 그대로 살린다 — 앱이 대기 시간을 읽을 수 있게.
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(
+                    ['message' => '시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.'],
+                    429,
+                    $e->getHeaders(),
+                );
+            }
+
+            return null;
+        });
     })->create();

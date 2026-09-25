@@ -99,7 +99,7 @@
     {{-- 절사 경고는 고른 값에 따라 즉시 바뀌어야 한다 — 리로드가 없으므로 서버 @if 로는 거짓말을 하게 된다 --}}
     <template x-if="method === 'trimmed' && {{ $event->judges->count() }} < {{ $trimmedMinJudges }}">
         <x-alert class="mt-3">
-            ⚠️ 현재 심사위원이 <strong>{{ $event->judges->count() }}명</strong>입니다.
+            <span class="inline-flex items-center gap-1"><span class="material-symbols-rounded text-[15px] leading-none" aria-hidden="true">warning</span>현재 심사위원이 <strong>{{ $event->judges->count() }}명</strong>입니다.</span>
             최고·최저 제외는 <strong>대상별 채점 심사위원이 {{ $trimmedMinJudges }}명 이상</strong>일 때만 적용되며, 미만이면 제외 없이 전체 점수로 집계됩니다.
         </x-alert>
     </template>

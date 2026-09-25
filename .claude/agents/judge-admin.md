@@ -26,6 +26,6 @@ tools: Read, Grep, Glob, Edit, Write, Bash
 
 ## 끝낼 때
 
-- 웹: `docker exec -w /var/www/html/sw4u/judge phpfpm composer lint` 와 관련 테스트
+- 웹: `docker exec -w /var/www/html/sw4u/judge phpfpm php vendor/bin/pint --test` (컨테이너에 composer 실행파일이 없다) 와 관련 테스트
 - 앱: `flutter analyze` · `flutter test` (Flutter: `/home/dikafryo/flutter/bin/flutter`)
 - 바꾼 화면은 `judge-designer` 에게 컨펌을 받는다.

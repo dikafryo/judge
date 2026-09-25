@@ -19,6 +19,8 @@
     </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap">
+    {{-- Material Symbols — 이모지 대신 쓰는 아이콘 폰트 (디자인 리뷰 2026-09 반영) --}}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block">
 
     {{-- Alpine.js --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
@@ -56,11 +58,11 @@
                     {{-- neisme Toolgrid 로고 → neis.me 홈. 앱 안에서는 바깥 브랜드를 노출하지 않는다 --}}
                     <a href="https://neis.me/" class="nm-logo" title="neis.me 홈으로 이동">
                         <span class="nm-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-                        <span class="nm-word">neis<b>.</b>me</span>
+                        <span class="nm-word hidden sm:inline">neis<b>.</b>me</span>
                     </a>
-                    <span class="text-slate-300 font-normal" aria-hidden="true">&rsaquo;</span>
+                    <span class="text-slate-300 font-normal hidden sm:inline" aria-hidden="true">&rsaquo;</span>
                 @endunless
-                <a href="{{ route('home') }}" class="hover:text-indigo-600">온라인 심사 시스템</a>
+                <a href="{{ route('home') }}" class="whitespace-nowrap hover:text-indigo-600">온라인 심사 시스템</a>
             </div>
             <div class="flex items-center text-sm text-slate-500">
                 @yield('header-right')

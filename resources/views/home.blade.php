@@ -24,7 +24,7 @@
 {{-- 심사위원 입장 --}}
 <section class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
     <div class="flex items-center gap-3 mb-4">
-        <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 text-xl">✍️</span>
+        <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 text-xl"><span class="material-symbols-rounded text-[20px] leading-none" aria-hidden="true">draw</span></span>
         <h2 class="text-xl font-bold">심사위원 입장</h2>
     </div>
 
