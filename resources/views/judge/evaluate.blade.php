@@ -273,9 +273,10 @@
          x-on:keydown.escape.window="signatureOpen = false">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" x-on:click.outside="signatureOpen = false">
             <h3 class="font-bold text-lg mb-1">전자 서명</h3>
-            <p class="text-sm text-slate-500 mb-4">아래 영역에 마우스나 손가락으로 서명하세요. 인쇄용 심사표에 삽입됩니다.</p>
-            <canvas x-ref="sigpad" width="400" height="180"
-                    class="w-full border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 touch-none cursor-crosshair"
+            <p class="text-sm text-slate-500 mb-4"><strong class="text-slate-700">칸을 가득 채워 크게</strong> 서명해 주세요. 작게 쓰면 흐리게 보일 수 있습니다. 서명은 최종집계표에 같은 굵기로 실립니다.</p>
+            {{-- 칸은 2:1 로 고정. 저장할 때 서명 부분만 잘라 같은 크기·같은 굵기로 다시 그린다(기기 크기와 무관). --}}
+            <canvas x-ref="sigpad" width="600" height="300"
+                    class="w-full aspect-[2/1] border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 touch-none cursor-crosshair"
                     x-init="initPad($el)"
                     x-on:pointerdown="padStart($event)" x-on:pointermove="padMove($event)"
                     x-on:pointerup="padEnd()" x-on:pointerleave="padEnd()"></canvas>
@@ -730,14 +731,22 @@
                 }
             },
 
-            /* ---------- 서명 패드 ---------- */
-            pad: { ctx: null, drawing: false, dirty: false },
+            /* ---------- 서명 패드 ----------
+             * 획을 좌표로 모아 두었다가, 저장할 때 서명한 부분만 잘라 고정 크기(1440×480) 이미지에
+             * 꽉 차게 다시 그린다. 선 굵기도 그 이미지 기준으로 고정한다 — 칸이 큰 태블릿에서
+             * 써도 폰에서 써도 출력물의 서명 굵기가 같다. (앱 signature_screen.dart 와 같은 규칙)
+             */
+            pad: { ctx: null, drawing: false, dirty: false, strokes: [] },
+            SIG_W: 1440, SIG_H: 480, SIG_STROKE: 18, SIG_MARGIN: 28,
 
             initPad(canvas) {
                 const ctx = canvas.getContext('2d');
-                ctx.lineWidth = 2.5;
+                // 캔버스 600px 폭 기준. 저장 이미지(1440 폭·18px)와 같은 비율의 굵기다.
+                ctx.lineWidth = 7.5;
                 ctx.lineCap = 'round';
-                ctx.strokeStyle = '#1e293b';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = '#0f172a';
+                ctx.fillStyle = '#0f172a';
                 this.pad.ctx = ctx;
             },
             padPos(e) {
@@ -751,21 +760,65 @@
                 e.target.setPointerCapture(e.pointerId);
                 this.pad.drawing = true;
                 const p = this.padPos(e);
+                this.pad.strokes.push([p]);
+                this.pad.ctx.beginPath();
+                this.pad.ctx.arc(p.x, p.y, this.pad.ctx.lineWidth / 2, 0, Math.PI * 2);
+                this.pad.ctx.fill();
                 this.pad.ctx.beginPath();
                 this.pad.ctx.moveTo(p.x, p.y);
+                this.pad.dirty = true;
             },
             padMove(e) {
                 if (!this.pad.drawing) return;
                 const p = this.padPos(e);
+                this.pad.strokes[this.pad.strokes.length - 1].push(p);
                 this.pad.ctx.lineTo(p.x, p.y);
                 this.pad.ctx.stroke();
-                this.pad.dirty = true;
             },
             padEnd() { this.pad.drawing = false; },
             padClear() {
                 const c = this.$refs.sigpad;
                 this.pad.ctx.clearRect(0, 0, c.width, c.height);
+                this.pad.strokes = [];
                 this.pad.dirty = false;
+            },
+            /** 서명한 부분만 잘라 고정 크기 이미지 가운데에 꽉 차게, 고정 굵기로 다시 그린다. */
+            signatureImage() {
+                const pts = this.pad.strokes.flat();
+                const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+                const left = Math.min(...xs), right = Math.max(...xs);
+                const top = Math.min(...ys), bottom = Math.max(...ys);
+                const w = Math.max(right - left, 1), h = Math.max(bottom - top, 1);
+                const scale = Math.min((this.SIG_W - this.SIG_MARGIN * 2) / w, (this.SIG_H - this.SIG_MARGIN * 2) / h, 12);
+                const dx = this.SIG_W / 2 - (left + right) / 2 * scale;
+                const dy = this.SIG_H / 2 - (top + bottom) / 2 * scale;
+
+                const out = document.createElement('canvas');
+                out.width = this.SIG_W;
+                out.height = this.SIG_H;
+                const ctx = out.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, out.width, out.height);
+                ctx.strokeStyle = ctx.fillStyle = '#0f172a';
+                ctx.lineWidth = this.SIG_STROKE;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                for (const stroke of this.pad.strokes) {
+                    const q = stroke.map(p => ({ x: p.x * scale + dx, y: p.y * scale + dy }));
+                    if (q.length === 1) {
+                        ctx.beginPath();
+                        ctx.arc(q[0].x, q[0].y, this.SIG_STROKE / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        continue;
+                    }
+                    ctx.beginPath();
+                    ctx.moveTo(q[0].x, q[0].y);
+                    for (const p of q.slice(1)) ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                }
+
+                return out.toDataURL('image/png');
             },
 
             async saveSignature() {
@@ -774,7 +827,7 @@
                     return;
                 }
 
-                const item = { id: newId(), type: 'signature', signature: this.$refs.sigpad.toDataURL('image/png') };
+                const item = { id: newId(), type: 'signature', signature: this.signatureImage() };
 
                 try {
                     let result = await this.send(item, CSRF);
