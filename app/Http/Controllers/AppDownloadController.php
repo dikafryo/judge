@@ -21,17 +21,23 @@ class AppDownloadController extends Controller
         return view('app', [
             'release' => $this->release(),
             'play' => $this->play(),
+            'playClosed' => ! config('judge.play_listing_open'),
         ]);
     }
 
     /**
      * 플레이스토어 비공개 테스트 안내에 필요한 세 링크.
-     * 하나라도 비어 있으면 안내를 통째로 숨긴다 — 반쪽짜리 절차는 안 하느니만 못하다.
+     * 공모전 기간에는 끄고(play_listing_open), 하나라도 비어 있으면 안내를 통째로 숨긴다
+     * — 반쪽짜리 절차는 안 하느니만 못하다.
      *
      * @return array{group:string, optIn:string, store:string}|null
      */
     private function play(): ?array
     {
+        if (! config('judge.play_listing_open')) {
+            return null;
+        }
+
         $links = [
             'group' => (string) config('judge.play_tester_group'),
             'optIn' => (string) config('judge.play_opt_in_url'),

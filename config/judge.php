@@ -33,6 +33,13 @@ return [
      */
     'super_admin_password' => env('JUDGE_SUPER_ADMIN_PASSWORD'),
 
+    /*
+     * 플레이스토어 안내(/app 방법 1) 노출 여부.
+     * 스토어에 접속하면 개인정보를 특정할 수 있어 공모전이 끝날 때까지 끈다.
+     * 공모전 이후 JUDGE_PLAY_LISTING_OPEN=true 로 다시 켠다.
+     */
+    'play_listing_open' => (bool) env('JUDGE_PLAY_LISTING_OPEN', false),
+
     // 비공개 테스트 참가자를 받는 구글 그룹스. 여기 가입해야 테스터가 될 수 있다.
     'play_tester_group' => env('JUDGE_PLAY_TESTER_GROUP', 'https://groups.google.com/g/judge-online'),
 

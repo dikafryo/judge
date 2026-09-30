@@ -36,6 +36,17 @@
         </div>
     </div>
 
+    {{-- 공모전 기간 — 스토어 접속으로 개인정보를 특정할 수 있어 스토어 링크를 내려 두었다 --}}
+    @if ($playClosed)
+        <div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-600">
+            <p class="font-bold text-slate-800">플레이스토어 정식 다운로드는 공모전 이후에 열립니다</p>
+            <p class="mt-1.5">
+                플레이스토어에 접속하면 개인정보를 특정할 수 있어, 공모전 기간에는 스토어 링크를 잠시 내려 두었습니다.
+                지금은 아래 <strong>파일로 바로 받기</strong>로 설치해 주세요.
+            </p>
+        </div>
+    @endif
+
     {{-- 받는 길이 둘이다. 어느 쪽이든 같은 앱이므로, 고르기 전에 그 사실을 먼저 말한다. --}}
     @if ($play)
         <p class="mt-8 text-center text-sm text-slate-500">

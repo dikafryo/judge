@@ -123,8 +123,25 @@ class ScreenRenderTest extends TestCase
         $this->assertStringContainsString('<noscript>', $html);
     }
 
+    /** 공모전 기간 — 스토어 접속으로 개인정보를 특정할 수 있어 스토어 링크를 모두 내린다. */
+    public function test_공모전_기간에는_플레이_링크_대신_안내만_보인다(): void
+    {
+        config(['judge.play_listing_open' => false]);
+
+        $html = $this->get(route('app.download'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('공모전 이후에 열립니다', $html);
+        $this->assertStringNotContainsString(config('judge.play_tester_group'), $html);
+        $this->assertStringNotContainsString(config('judge.play_opt_in_url'), $html);
+        $this->assertStringNotContainsString(config('judge.play_store_url'), $html);
+        $this->assertStringNotContainsString('방법 1', $html);
+        $this->assertStringContainsString('앱 내려받기', $html);
+    }
+
     public function test_앱_받기_화면이_두_가지_방법을_모두_안내한다(): void
     {
+        config(['judge.play_listing_open' => true]);
+
         $html = $this->get(route('app.download'))->assertOk()->getContent();
 
         // 플레이스토어 3단계 — 순서를 지키지 않으면 앱이 보이지 않아 대부분 여기서 막힌다
@@ -141,7 +158,7 @@ class ScreenRenderTest extends TestCase
     /** 링크가 설정되지 않은 곳에서는 반쪽짜리 절차를 보여 주느니 통째로 감춘다. */
     public function test_플레이_링크가_없으면_안내를_감춘다(): void
     {
-        config(['judge.play_tester_group' => '']);
+        config(['judge.play_listing_open' => true, 'judge.play_tester_group' => '']);
 
         $html = $this->get(route('app.download'))->assertOk()->getContent();
 
