@@ -6,30 +6,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', '온라인 심사 시스템') — Judge</title>
 
-    {{-- Tailwind CSS (Play CDN — 빌드 스텝 없이 사용) --}}
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Pretendard', 'Noto Sans KR', 'sans-serif'] },
-                },
-            },
-        };
-    </script>
+    {{-- Tailwind CSS + Alpine.js — Vite 빌드(public/build). 예전엔 Play CDN 이 매 접속마다
+         400KB 스크립트를 받아 브라우저 안에서 CSS 를 만들었다. 빌드: npm run build (README §2) --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap">
     {{-- Material Symbols — 이모지 대신 쓰는 아이콘 폰트 (디자인 리뷰 2026-09 반영) --}}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block">
 
-    {{-- Alpine.js --}}
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
-
-    <style>
-        [x-cloak] { display: none !important; }
-        /* 한국어 타이포 — 단어 중간에서 끊지 않고, 줄간격을 넉넉히 */
-        body { word-break: keep-all; line-height: 1.6; }
-    </style>
     {{-- PWA — 홈 화면 설치 / 앱 아이콘 / 오프라인 (public/manifest.json · public/sw.js) --}}
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1F2933">

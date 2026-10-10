@@ -154,6 +154,10 @@ class EventSetup
             $event->judges()->update(['code' => null]);
             $event->judges()->get()->each(fn (Judge $judge) => $judge->tokens()->delete());
 
+            // 코드 회수는 쿼리 빌더 update 라 Judge 모델 훅이 돌지 않는다 —
+            // 집계·설정 캐시에 회수 전 코드가 남지 않도록 여기서 비운다.
+            $event->forgetCaches();
+
             return '심사가 마감되었습니다. 심사위원 접속 코드가 모두 회수되어 더 이상 접속할 수 없습니다.';
         }
 

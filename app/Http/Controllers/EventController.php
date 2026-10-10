@@ -35,7 +35,8 @@ class EventController extends Controller
     {
         $event = $setup->createEvent($request->validated());
 
-        // 생성 직후 해당 행사의 관리자 세션 부여 → 바로 설정 화면으로
+        // 생성 직후 해당 행사의 관리자 세션 부여 → 바로 설정 화면으로 (세션 고정 방지로 id 를 새로 받는다)
+        $request->session()->regenerate();
         $request->session()->put($event->adminSessionKey(), true);
 
         return redirect()

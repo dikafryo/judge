@@ -17,7 +17,10 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [EventController::class, 'home'])->name('home');
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
-Route::post('/events', [EventController::class, 'store'])->name('events.store');
+// 열린 생성 폼이라 방치하면 목록이 쓰레기로 찬다 — 앱 API 와 같은 제한을 건다.
+Route::post('/events', [EventController::class, 'store'])
+    ->middleware('throttle:event-create')
+    ->name('events.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -107,7 +110,10 @@ Route::prefix('root')->group(function () {
 */
 Route::prefix('admin/{event}')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('admin.login');
-    Route::post('/login', [AuthController::class, 'login'])->name('admin.login.post');
+    // 행사 비밀번호 대입 방지 — 앱(/api/v1/admin/session)과 같은 제한, 행사 단위로 묶인다.
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:admin-login')
+        ->name('admin.login.post');
     Route::post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
     Route::middleware(['event.admin', 'demo.readonly'])->group(function () {

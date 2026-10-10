@@ -1,9 +1,8 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-}
+/* layouts/app.blade.php 의 인라인 <style> 에 있던 것 */
+[x-cloak] { display: none !important; }
+/* 한국어 타이포 — 단어 중간에서 끊지 않고, 줄간격을 넉넉히 */
+body { word-break: keep-all; line-height: 1.6; }

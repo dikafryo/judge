@@ -18,7 +18,9 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    // SESSION_DRIVER 를 따로 두지 않으면 캐시 저장소를 따라간다 —
+    // CACHE_STORE=redis 한 줄로 세션까지 Redis 에 실린다. 그 외에는 sessions 테이블.
+    'driver' => env('SESSION_DRIVER', env('CACHE_STORE') === 'redis' ? 'redis' : 'database'),
 
     /*
     |--------------------------------------------------------------------------

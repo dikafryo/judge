@@ -15,6 +15,13 @@ class Candidate extends Model
 
     protected $fillable = ['event_id', 'name', 'affiliation', 'description', 'sort_order'];
 
+    /** 저장·삭제되면 소속 행사의 캐시(심사위원 화면·설정·집계)를 비운다 */
+    protected static function booted(): void
+    {
+        static::saved(fn (self $model) => Event::forgetCachesFor((int) $model->event_id));
+        static::deleted(fn (self $model) => Event::forgetCachesFor((int) $model->event_id));
+    }
+
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);

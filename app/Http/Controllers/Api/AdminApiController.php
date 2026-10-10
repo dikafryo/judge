@@ -19,6 +19,7 @@ use App\Services\EventSetup;
 use App\Services\ScoreAggregator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -68,7 +69,19 @@ class AdminApiController extends Controller
     {
         $event = $this->event($request);
 
-        return response()->json([
+        // 항목·대상·심사위원·점수가 바뀌는 모든 쓰기가 Event::forgetCaches() 를 거치므로
+        // 한 시간을 둬도 묵은 값이 보일 일은 없다. 설정 화면을 열 때마다 네 번 읽던 것을 한 번으로 줄인다.
+        return response()->json(Cache::remember(
+            $event->cacheKey('setup'),
+            3600,
+            fn (): array => $this->setupData($event),
+        ));
+    }
+
+    /** 설정 화면 응답 본문 — setup() 의 캐시 미스에서만 실행된다 */
+    private function setupData(Event $event): array
+    {
+        return [
             // withExists: 항목마다 EXISTS 쿼리를 따로 던지지 않도록 한 번에 가져온다
             'criteria' => $event->criteria()->withExists('scores')->get()
                 ->map(fn (Criterion $c) => [
@@ -78,13 +91,13 @@ class AdminApiController extends Controller
                     'max_score' => (int) $c->max_score,
                     'parent_id' => $c->parent_id,
                     'has_scores' => (bool) $c->scores_exists,
-                ])->values(),
+                ])->values()->all(),
             'candidates' => $event->candidates()->get()
                 ->map(fn (Candidate $c) => [
                     'id' => $c->id,
                     'name' => $c->name,
                     'affiliation' => $c->affiliation,
-                ])->values(),
+                ])->values()->all(),
             'judges' => $event->judges()->get()
                 ->map(fn (Judge $j) => [
                     'id' => $j->id,
@@ -93,9 +106,9 @@ class AdminApiController extends Controller
                     'signed_at' => $j->signed_at?->toIso8601String(),
                     // 앱이 심사위원 카드를 화면에 띄워 바로 보여줄 수 있게 한다(인쇄 없이 배포).
                     'entry_url' => $j->code ? route('judge.show', $j) : null,
-                ])->values(),
+                ])->values()->all(),
             'total_max' => (int) $event->topCriteria()->sum('max_score'),
-        ]);
+        ];
     }
 
     /** 집계 방식 · 블라인드 · 선정자 수 */

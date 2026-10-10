@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Event;
 use App\Models\Score;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -26,12 +27,33 @@ class ScoreAggregator
     public const TRIMMED_MIN_JUDGES = 3;
 
     /**
+     * 집계 캐시 보관 시간(초).
+     *
+     * 웹 대시보드와 앱이 각각 5초마다 폴링하므로, 보는 사람이 여럿이면 같은 계산을 겹쳐서 한다.
+     * 점수·서명·설정이 바뀌면 그 자리에서 비우므로(ScoreWriter·모델 훅) 이 시간은 안전망일 뿐이다.
+     */
+    public const CACHE_TTL = 30;
+
+    /**
+     * 집계 결과 — 캐시가 있으면 그것을, 없으면 계산해서 담아 둔다.
+     * 웹 대시보드 폴링·CSV·인쇄·앱 API 가 모두 여기를 거친다.
+     */
+    public function aggregate(Event $event): array
+    {
+        return Cache::remember(
+            $event->cacheKey('aggregate'),
+            self::CACHE_TTL,
+            fn (): array => $this->compute($event),
+        );
+    }
+
+    /**
      * 집계 계산.
      *
      * 통계 쿼리: scores를 judge/candidate 별로 GROUP BY 하여 심사위원별 부여 총점을 구하고,
      * 이를 기반으로 대상별 합계·평균·순위를 계산한다.
      */
-    public function aggregate(Event $event): array
+    public function compute(Event $event): array
     {
         $event->load(['candidates', 'criteria', 'judges']);
 
@@ -53,8 +75,8 @@ class ScoreAggregator
                 'pass_count' => (int) ($event->pass_count ?? 0) ?: null,
             ],
             'pass_tie' => $passTie,
-            'judges' => $this->judgeProgress($event, $matrix),
-            'rows' => $ranked->values(),
+            'judges' => $this->judgeProgress($event, $matrix)->all(),
+            'rows' => $ranked->values()->all(),
             'generated_at' => now()->format('Y-m-d H:i:s'),
         ];
     }

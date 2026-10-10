@@ -35,7 +35,8 @@ class JudgeApiController extends Controller
     public function me(Request $request, JudgePayloadService $payloads): JsonResponse
     {
         $judge = $this->judge($request);
-        $event = $judge->event()->with(['candidates', 'criteria'])->firstOrFail();
+        // 항목·대상은 서비스가 캐시에서 꺼내므로 여기서 미리 적재하지 않는다
+        $event = $judge->event()->firstOrFail();
         $payload = $payloads->build($judge, $event);
 
         // PHP는 빈 연관 배열을 JSON 배열([])로 직렬화한다. 앱에서 scores는

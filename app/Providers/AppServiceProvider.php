@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Event;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -48,10 +49,11 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(10)->by('code:'.self::inputKey($request, 'code')),
         ]);
 
-        // 앱 관리자 로그인 — 행사별 비밀번호 대입을 행사 단위로 묶는다
+        // 관리자 로그인 — 행사별 비밀번호 대입을 행사 단위로 묶는다.
+        // 앱은 event_id 를 본문에 싣고(/api/v1/admin/session), 웹은 경로의 {event} 로 온다.
         RateLimiter::for('admin-login', fn (Request $request): array => [
             Limit::perMinute(30)->by('ip:'.$request->ip()),
-            Limit::perMinute(10)->by('event:'.self::inputKey($request, 'event_id')),
+            Limit::perMinute(10)->by('event:'.self::eventKey($request)),
         ]);
 
         // 행사 생성 — 열린 엔드포인트라 방치하면 목록이 쓰레기로 찬다
@@ -59,6 +61,14 @@ class AppServiceProvider extends ServiceProvider
 
         // 전체 관리자 로그인 — 비밀번호 하나가 모든 행사의 열쇠라 예전처럼 좁게 둔다
         RateLimiter::for('root-login', fn (Request $request): Limit => Limit::perMinute(5)->by('ip:'.$request->ip()));
+    }
+
+    /** 로그인 대상 행사 — 웹은 라우트 {event}, 앱은 본문 event_id */
+    private static function eventKey(Request $request): string
+    {
+        $event = $request->route('event');
+
+        return $event instanceof Event ? (string) $event->id : self::inputKey($request, 'event_id');
     }
 
     /** 제한 키로 쓸 입력값. 문자열·숫자가 아니면(배열 등) 한 통으로 모은다. */

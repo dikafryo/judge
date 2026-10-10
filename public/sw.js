@@ -12,7 +12,7 @@
  * ※ 캐시 내용을 바꾸면 반드시 SW_VERSION 을 올릴 것 (구버전 캐시는 activate 에서 삭제된다).
  */
 
-const SW_VERSION = 'v1';
+const SW_VERSION = 'v2'; // v2: Tailwind·Alpine 을 CDN 대신 /build/ 번들로
 
 const SHELL_CACHE = 'judge-shell-' + SW_VERSION;
 const PAGE_CACHE = 'judge-pages-' + SW_VERSION;
@@ -35,14 +35,11 @@ const PRECACHE_SHELL = [
 
 /** layouts/app.blade.php 가 <head> 에서 불러오는 CDN 자산 — 실패해도 설치는 계속한다. */
 const PRECACHE_CDN = [
-    'https://cdn.tailwindcss.com',
-    'https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js',
     'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css',
     'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap',
 ];
 
 const CDN_HOSTS = [
-    'cdn.tailwindcss.com',
     'cdn.jsdelivr.net',
     'fonts.googleapis.com',
     'fonts.gstatic.com',
@@ -50,7 +47,9 @@ const CDN_HOSTS = [
 
 /** 아이콘·매니페스트처럼 내용이 고정된 동일 출처 자산 */
 function isStaticAsset(path) {
+    // /build/ 는 Vite 산출물 — 파일명에 해시가 있어 내용이 바뀌면 이름도 바뀐다
     return path.startsWith('/icons/')
+        || path.startsWith('/build/')
         || path === '/manifest.json'
         || path === '/favicon.ico'
         || path === OFFLINE_URL;

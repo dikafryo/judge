@@ -98,13 +98,15 @@ DB_DATABASE=judge
 DB_USERNAME=judge
 DB_PASSWORD=원하는_강력한_비밀번호
 
-SESSION_DRIVER=database
 QUEUE_CONNECTION=database
 
-# Redis를 쓰지 않는다면 CACHE_STORE=database 로 바꿔도 됨
+# Redis — 캐시·세션·로그인 제한 카운터. redis 로 두면 세션도 Redis 를 따라간다.
+# 쓰지 않는다면 CACHE_STORE=database (세션은 sessions 테이블로 자동 전환)
 CACHE_STORE=redis
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
+REDIS_PASSWORD=            # 비밀번호가 없으면 줄을 지워도 됨
+REDIS_PREFIX="judge:"      # 한 Redis 를 여러 사이트가 쓸 때 키 충돌 방지 (모든 키 앞에 붙음)
 ```
 
 > DB 계정은 미리 생성해 둡니다. MariaDB 예시:
@@ -132,6 +134,20 @@ PHP-FPM 실행 계정(예: `www-data`)이 아래 디렉터리에 **쓰기 권한
 chown -R <배포계정>:www-data storage bootstrap/cache
 chmod -R 2775 storage bootstrap/cache
 ```
+
+### 프런트엔드 빌드 (필수)
+
+Tailwind CSS 와 Alpine.js 는 CDN 이 아니라 Vite 로 빌드한 번들(`public/build/`)로 나갑니다.
+`public/build/` 는 저장소에 들어가지 않으므로 **배포 서버에서 한 번 빌드**해야 합니다
+(없으면 모든 화면이 500 — "Vite manifest not found").
+
+```bash
+npm install --ignore-scripts
+npm run build
+```
+
+> 뷰에 새 Tailwind 클래스를 쓰거나 `tailwind.config.js` 를 바꾸면 다시 빌드합니다.
+> 산출물 파일명에 해시가 붙어 nginx 가 1년 immutable 로 캐시해도 안전합니다.
 
 ### 배포 캐시 최적화
 
@@ -273,8 +289,17 @@ php artisan judge:demo
 ## 7. 운영 참고 사항
 
 - **큐 워커 불필요**: 현재 백그라운드 작업(Job)을 사용하지 않으므로 `queue:work`를 상시 구동할 필요는 없습니다.
-- **세션/캐시**: 세션은 DB 테이블(`sessions`)에 저장됩니다(`SESSION_DRIVER=database`, 마이그레이션에 포함).
-  Redis가 없으면 `.env`에서 `CACHE_STORE=database`로 바꾸면 됩니다.
+- **세션/캐시**: `CACHE_STORE=redis` 하나로 캐시·세션·로그인 제한 카운터가 모두 Redis 에 실립니다
+  (세션 드라이버는 `config/session.php` 에서 캐시 저장소를 따라감. `SESSION_DRIVER` 로 따로 지정할 수도 있음).
+  Redis가 없으면 `CACHE_STORE=database` 로 바꾸면 됩니다(`sessions`·`cache` 테이블은 마이그레이션에 포함).
+- **보안 헤더**: HSTS·CSP·X-Frame-Options 등은 nginx 가 붙입니다 — vm1 의 `security-headers-judge.sw4u.kr.inc`.
+  새 외부 스크립트/스타일 출처를 쓰면 그 CSP 도 함께 고쳐야 합니다.
+- **무엇이 캐시되나**: 행사 단위로 세 조각 — 심사위원 화면의 항목·대상(`judge-structure`), 앱 설정 화면 묶음(`setup`),
+  대시보드 집계(`aggregate`, 30초) — 와 행사 목록(`events:index`). 키는 `Event::cacheKey()` 가 만들고,
+  대상·항목·심사위원·행사 모델의 저장/삭제 훅과 `ScoreWriter`(점수 저장)·`EventSetup::toggleOpen`(마감)이
+  `Event::forgetCaches()` 로 비웁니다. **DB 를 직접 고쳤다면** `php artisan cache:clear` 로 비우세요.
+- **설정 캐시 주의**: `.env` 를 고친 뒤에는 `php artisan config:cache` 를 다시 실행해야 반영됩니다(§2 배포 캐시 최적화).
+- **테스트와 설정 캐시**: `phpunit.xml` 의 `APP_CONFIG_CACHE` 가 존재하지 않는 경로를 가리키므로, 운영 `config:cache` 가 있어도 테스트는 sqlite·array 설정으로 돕니다. 이 줄을 지우면 테스트가 운영 DB·Redis 를 건드리니 유지하세요.
 - **로그**: `storage/logs/laravel.log` — 장애 시 가장 먼저 확인하세요.
 - **비밀번호 백업 불가**: 관리 비밀번호는 해시로 저장되어 서버에서도 복구할 수 없으므로,
   행사 운영자가 각자 안전하게 별도 보관해야 합니다.

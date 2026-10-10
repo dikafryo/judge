@@ -35,7 +35,8 @@ class JudgeController extends Controller
     /** 심사 페이지 — 대상 목록 + 항목별 점수 입력 폼 */
     public function show(Judge $judge, JudgePayloadService $payloads): View
     {
-        $event = $judge->event()->with(['candidates', 'criteria'])->firstOrFail();
+        // 항목·대상은 서비스가 캐시에서 꺼내므로 여기서 미리 적재하지 않는다
+        $event = $judge->event()->firstOrFail();
 
         // payload 조립은 서비스에 있다 — 네이티브 앱 API 가 같은 코드를 쓴다
         // maxTotal 은 웹 화면 전용 — 앱 API 응답(같은 build())의 모양은 건드리지 않는다

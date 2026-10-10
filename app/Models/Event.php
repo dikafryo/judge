@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\HasApiTokens;
 
 class Event extends Model implements AuthenticatableContract
@@ -18,12 +19,64 @@ class Event extends Model implements AuthenticatableContract
     /** 집계 방식 — all: 전체 평균 / trimmed: 최고·최저 심사위원 제외 */
     public const SCORING_METHODS = ['all', 'trimmed'];
 
+    /**
+     * 행사 단위 캐시 조각 이름. 키는 cacheKey() 가 만든다.
+     *
+     * - judge-structure: 심사위원 화면의 항목·대상·만점 (JudgePayloadService)
+     * - setup:           앱 설정 화면 묶음 (Api\AdminApiController::setup)
+     * - aggregate:       대시보드 집계 (ScoreAggregator)
+     *
+     * 어느 하나라도 바뀌는 쓰기(설정·점수·서명·마감)는 forgetCaches() 로 전부 비운다.
+     * 조각마다 따로 지우려다 하나를 빠뜨리는 쪽이 더 위험하고, 비우는 비용은 DEL 몇 번이다.
+     */
+    public const CACHE_PARTS = ['judge-structure', 'setup', 'aggregate'];
+
+    /** 행사 목록(앱 로그인 화면·/api/v1/events) 캐시 키 */
+    public const LIST_CACHE_KEY = 'events:index';
+
     // 관리자는 행사 비밀번호를 토큰으로 교환해 앱에서 쓴다
     // Sanctum 토큰의 주체가 되려면 Authenticatable 이어야 한다.
     // 없으면 인증된 요청이 throttle 미들웨어를 지날 때 getAuthIdentifier() 로 500 이 난다.
     use Authenticatable;
     use HasApiTokens;
     use HasFactory;
+
+    /** 행사 자체가 바뀌면(생성·마감·설정·삭제) 이 행사의 캐시와 목록 캐시를 비운다 */
+    protected static function booted(): void
+    {
+        static::saved(fn (Event $event) => $event->forgetCaches());
+        static::deleted(fn (Event $event) => $event->forgetCaches());
+    }
+
+    /** 이 행사의 캐시 키. 전역 접두어(REDIS_PREFIX·CACHE_PREFIX)는 프레임워크가 앞에 붙인다. */
+    public function cacheKey(string $part): string
+    {
+        return self::cacheKeyFor((int) $this->id, $part);
+    }
+
+    public static function cacheKeyFor(int $eventId, string $part): string
+    {
+        return "event:{$eventId}:{$part}";
+    }
+
+    /** 이 행사의 캐시 조각 전부 + 행사 목록 캐시를 비운다 */
+    public function forgetCaches(): void
+    {
+        self::forgetCachesFor((int) $this->id);
+    }
+
+    /**
+     * 행사를 적재하지 않고 id 만으로 비운다 — 대상·항목·심사위원 모델의 저장/삭제 훅이 쓴다.
+     * (일괄 등록 100건에 행사 조회 100번을 덧붙이지 않기 위해)
+     */
+    public static function forgetCachesFor(int $eventId): void
+    {
+        foreach (self::CACHE_PARTS as $part) {
+            Cache::forget(self::cacheKeyFor($eventId, $part));
+        }
+
+        Cache::forget(self::LIST_CACHE_KEY);
+    }
 
     protected $fillable = ['name', 'description', 'event_date', 'admin_password', 'is_open', 'is_demo', 'scoring_method', 'pass_count', 'is_blind', 'default_score_percent', 'report_signers', 'show_judge_signs'];
 

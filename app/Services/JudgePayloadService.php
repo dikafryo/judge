@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Event;
 use App\Models\Judge;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * 심사위원 화면에 내려보낼 데이터를 조립한다.
@@ -17,6 +18,9 @@ use Illuminate\Support\Collection;
  */
 class JudgePayloadService
 {
+    /** 행사 구조 캐시 보관 시간(초). 쓰기마다 Event::forgetCaches() 로 비우므로 길어도 된다. */
+    public const STRUCTURE_TTL = 3600;
+
     /**
      * @return array{
      *     judge: array, event: array, groups: array, candidates: array,
@@ -35,12 +39,31 @@ class JudgePayloadService
             ],
             // 아직 채점하지 않은 항목을 만점의 몇 %로 미리 채울지. null 이면 빈칸으로 둔다.
             'defaultScorePercent' => $event->default_score_percent,
-            'groups' => $this->groups($event),
-            'candidates' => $this->candidates($event),
             'scores' => $this->scores($judge),
             'hasSignature' => ! empty($judge->signature),
-            'totalMax' => (int) $event->criteria->whereNull('parent_id')->sum('max_score'),
-        ];
+        ] + $this->structure($event);
+    }
+
+    /**
+     * 심사위원 모두에게 같은 부분 — 항목 묶음·대상 목록·만점.
+     *
+     * 심사위원이 화면을 열거나 앱이 5초마다 동기화할 때마다 항목·대상을 다시 읽지 않도록
+     * Redis 에 둔다. 대상·항목·블라인드 설정이 바뀌면 모델 훅이 Event::forgetCaches() 로 비운다.
+     * 호출 측은 candidates/criteria 를 미리 적재하지 않아도 된다 — 캐시가 비었을 때만 읽는다.
+     *
+     * @return array{groups: array, candidates: array, totalMax: int}
+     */
+    public function structure(Event $event): array
+    {
+        return Cache::remember(
+            $event->cacheKey('judge-structure'),
+            self::STRUCTURE_TTL,
+            fn (): array => [
+                'groups' => $this->groups($event),
+                'candidates' => $this->candidates($event),
+                'totalMax' => (int) $event->criteria->whereNull('parent_id')->sum('max_score'),
+            ],
+        );
     }
 
     /**

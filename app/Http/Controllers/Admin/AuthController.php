@@ -28,6 +28,8 @@ class AuthController extends Controller
             return back()->withErrors(['password' => '비밀번호가 올바르지 않습니다.']);
         }
 
+        // 로그인 전의 세션 id 를 그대로 쓰면 미리 심어 둔 id 로 권한을 가로챌 수 있다(세션 고정)
+        $request->session()->regenerate();
         $request->session()->put($event->adminSessionKey(), true);
 
         return redirect()->route('admin.dashboard', $event);

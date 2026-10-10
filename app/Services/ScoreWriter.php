@@ -68,6 +68,10 @@ class ScoreWriter
             }
         });
 
+        // 대시보드 집계·설정 화면의 has_scores 가 바로 새 점수를 보도록 비운다.
+        // 삭제는 쿼리 빌더라 모델 훅이 돌지 않으므로 여기서 명시적으로 한다.
+        $event->forgetCaches();
+
         $saved = $judge->scores()->where('candidate_id', $candidate->id);
 
         // 블라인드면 응답 메시지에도 이름 대신 심사번호만 쓴다

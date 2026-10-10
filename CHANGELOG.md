@@ -4,6 +4,41 @@
 (웹 화면의 우측 상단 `?` 버튼은 v26.7.15부터 사용 설명서 — `resources/views/partials/manual.blade.php`.
 기능이 바뀌면 설명서의 해당 섹션도 함께 갱신할 것.)
 
+## v26.10.10 (2026-10-10) — Redis 캐시 · Tailwind/Alpine 번들 · 보안 보강
+
+### 개선 — 첫 화면 로딩 (Tailwind Play CDN → Vite 빌드)
+- 매 접속마다 `cdn.tailwindcss.com` 에서 약 400KB 스크립트를 받아 브라우저 안에서 CSS 를 만들던 것을
+  **Vite 빌드(`public/build/`)** 로 바꿨다 — CSS 35KB(gzip 7KB) + Alpine 포함 JS 54KB(gzip 19KB), 1년 immutable 캐시.
+  Tailwind 는 CDN 과 같은 3.x 를 써서 클래스 의미가 그대로다 (`tailwind.config.js`)
+- Alpine.js 도 CDN 대신 번들(`resources/js/app.js`). 서비스워커 `v2` — CDN 선캐시 목록에서 둘을 빼고 `/build/` 를 고정 자산으로
+
+### 보안
+- **웹 관리자 로그인·웹 행사 생성에 속도 제한** — 앱 API 와 같은 `admin-login`(행사 단위 10회/분)·`event-create`.
+  웹은 행사 id 가 경로 `{event}` 로 오므로 제한 키가 그것을 읽도록 `AppServiceProvider::eventKey()` 추가
+- 관리자 로그인·행사 생성 성공 시 **세션 id 재생성** (세션 고정 방지)
+- nginx 에 **보안 헤더** 추가(`security-headers-judge.sw4u.kr.inc`): HSTS·CSP·X-Frame-Options·nosniff·Referrer-Policy·Permissions-Policy
+- `composer update` — guzzle 7.14→8.2, league/commonmark 2.8→2.10, flysystem 3.35→3.36, laravel/framework 13.19→13.35.
+  `composer audit` 경고 20건 → 0건
+
+### 개선 — 캐시·세션을 Redis 로
+- **세션·캐시 저장소를 DB 테이블에서 Redis 로** (`CACHE_STORE=redis` 하나로 세션까지 따라감 — `config/session.php`).
+  요청마다 `sessions` 를 읽고 쓰던 비용과 로그인 제한 카운터의 `cache` 테이블 접근이 사라진다
+- **키 접두어** `REDIS_PREFIX="judge:"` — 같은 Redis 를 쓰는 다른 사이트와 키가 섞이지 않는다.
+  Laravel 기본 캐시 접두어가 뒤에 붙어 실제 키는 `judge:judge-cache-event:12:aggregate` 꼴
+- **테스트 격리**: `phpunit.xml` 에 `APP_CONFIG_CACHE` 를 존재하지 않는 경로로 두어, 운영 `config:cache` 가 있어도
+  테스트가 sqlite·array 설정으로 돈다 (없으면 테스트가 운영 DB·Redis 를 읽는다)
+- **행사 단위 응답 캐시** (`Event::cacheKey()` / `forgetCaches()`):
+  - 심사위원 화면·앱 `/judge/me` 의 항목·대상·만점 (`JudgePayloadService::structure`, 1시간)
+  - 앱 설정 화면 묶음 `/api/v1/admin/setup` (1시간)
+  - 대시보드 집계 `ScoreAggregator::aggregate` (30초) — 웹 대시보드·앱이 5초마다 폴링하는 값
+  - 앱 로그인 화면의 행사 목록 `/api/v1/events` (5분)
+- **무효화**: 대상·항목·심사위원·행사 모델의 저장/삭제 훅, 점수 저장(`ScoreWriter`), 마감/재개(`EventSetup::toggleOpen`)가
+  해당 행사의 캐시를 전부 비운다. 묵은 값이 보이지 않는지 `tests/Feature/CacheInvalidationTest.php` 가 확인한다
+- 라우트·이벤트·뷰 캐시 생성 (`route:cache`, `event:cache`, `view:cache`)
+
+### 문서
+- README `.env` 예시와 운영 참고 사항에 Redis 접두어·캐시 무효화 규칙 추가. `.env.example` 갱신
+
 ## v26.9.5 (2026-09-04) — 안드로이드 앱(APK) · 모바일 심사 화면 전면 개편
 
 ### 개선 — 심사 화면 모바일/태블릿 최적화
