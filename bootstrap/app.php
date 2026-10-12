@@ -27,14 +27,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // 경로: Cloudflare → NPM(80/443) → nginx(realip) → phpfpm.
-        // nginx 의 realip 은 172.18.0.0/16(NPM)만 걷어내므로 REMOTE_ADDR 은 Cloudflare 엣지 IP 가 되고,
-        // 실제 방문자는 X-Forwarded-For 의 그 앞 칸에 있다. 그래서 Laravel 이 한 번 더 걷어내야 한다.
+        // 경로: 방문자 → NPM(80/443, TLS 종료) → nginx(realip) → phpfpm.
+        // 2026-10 현재 DNS 는 원서버를 직접 가리킨다(Cloudflare 미경유). nginx 의 realip 이 NPM(172.18.0.0/16)을
+        // 걷어내면 REMOTE_ADDR 이 곧 방문자 IP 라 아래 목록에 들지 않고, X-Forwarded-* 헤더는 무시된다.
+        // 그래서 HTTPS 여부는 헤더가 아니라 nginx 의 `fastcgi_param HTTPS on`(sw4u.kr.conf judge 블록)으로 받는다.
+        // 이게 빠지면 asset URL 이 http:// 로 나가 혼합 콘텐츠로 CSS·JS 가 막힌다(2026-10-12 장애).
         //
-        // 예전의 '*'(REMOTE_ADDR 을 무조건 신뢰)는 Cloudflare 를 거친 요청엔 맞지만,
-        // 원서버에 직접 붙는 요청이 X-Forwarded-For 를 지어내면 request()->ip() 가 그 값이 된다
-        // → IP 기준 로그인 제한을 IP 를 바꿔 가며 우회할 수 있었다.
-        // 이제 Cloudflare 대역과 내부망(LAN·tailscale·docker·loopback)만 프록시로 신뢰한다.
+        // Cloudflare 대역은 다시 앞에 둘 때를 위해 남긴다. 그때는 REMOTE_ADDR 이 엣지 IP 가 되고,
+        // Laravel 이 X-Forwarded-For 를 한 번 더 걷어내 앞 칸의 실제 방문자를 쓴다.
+        //
+        // '*'(REMOTE_ADDR 을 무조건 신뢰)로 두면 원서버에 직접 붙는 요청이 X-Forwarded-For 를 지어내
+        // request()->ip() 를 바꿀 수 있다 → IP 기준 로그인 제한을 우회할 수 있었다.
+        // 그래서 Cloudflare 대역과 내부망(LAN·tailscale·docker·loopback)만 프록시로 신뢰한다.
         // 목록 출처: https://www.cloudflare.com/ips/ (대역이 바뀌면 여기만 고친다)
         $middleware->trustProxies(at: [
             // Cloudflare IPv4

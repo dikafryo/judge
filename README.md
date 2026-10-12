@@ -348,10 +348,10 @@ curl -sI https://<도메인>/sw.js           # → 200 / application/javascript
 > 이 값이 캐시 이름이 되고, 구버전 캐시는 `activate`에서 삭제됩니다.
 > 올리지 않으면 사용자 브라우저에 옛 자산이 남아 "고쳤는데 안 바뀐다"가 됩니다.
 >
-> **CDN 캐시도 함께 봐야 합니다.** 이 사이트는 Cloudflare 뒤에 있어 정적 파일이 엣지에
-> 4시간(`max-age=14400`) 묶입니다. `sw.js` 와 `downloads/judge-latest.apk` 는 이름이 그대로인 채
+> **HTTP 캐시도 함께 봐야 합니다.** `sw.js` 와 `downloads/judge-latest.apk` 는 이름이 그대로인 채
 > 내용만 바뀌므로, nginx 에서 `Cache-Control: no-cache` 를 붙여 매번 검증하게 해 두었습니다
-> (`sw4u.kr.conf` 의 judge 블록). 버전이 이름에 박힌 APK 는 불변이라 그대로 캐시해도 됩니다.
+> (`sw4u.kr.conf` 의 judge 블록). 현재(2026-10) DNS 는 원서버를 직접 가리키지만, Cloudflare 같은 CDN 을
+> 다시 앞에 두면 이 설정이 엣지 캐시(기본 4시간)도 막아 줍니다. 버전이 이름에 박힌 APK 는 불변이라 그대로 캐시해도 됩니다.
 
 ### 안드로이드 앱 (APK)
 
